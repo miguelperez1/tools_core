@@ -11,13 +11,14 @@ from PySide2 import QtGui
 from tools_core.asset_library import library_manager as lm
 from tools_core.pyqt_commons import common_widgets as cw
 
-# TODO Filter by search
-# TODO Edit tags functionality
-
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(10)
+
+
+# TODO CBB Autocompleter
+# TODO Edit tags
 
 
 class AssetTreeWidget(QtWidgets.QTreeWidget):
@@ -71,25 +72,36 @@ class AssetTreeWidget(QtWidgets.QTreeWidget):
 
         self.blockSignals(False)
 
-    def refresh_assets(self, libraries, tags=None):
+    def refresh_assets(self, libraries, tags=None, regex=None):
         self.blockSignals(True)
 
         for asset_item in self.asset_items:
             if asset_item.library not in libraries:
                 asset_item.setHidden(True)
 
-            elif asset_item.library in libraries and not tags:
-                asset_item.setHidden(False)
+            elif asset_item.library in libraries:
+                if tags:
+                    filter_tags_set = set(tags)
+                    asset_tags_set = set(asset_item.asset_data["tags"])
 
-            elif asset_item.library in libraries and tags:
-                # TODO This is broken
-                filter_tags_set = set(tags)
-                asset_tags_set = set(asset_item.asset_data["tags"])
-
-                if len(filter_tags_set.intersection(asset_tags_set)) > 0:
-                    asset_item.setHidden(False)
-                else:
-                    asset_item.setHidden(True)
+                    if len(filter_tags_set.intersection(asset_tags_set)) > 0:
+                        if regex:
+                            if not regex.search(asset_item.asset_data["asset_name"]):
+                                asset_item.setHidden(True)
+                            else:
+                                asset_item.setHidden(False)
+                        else:
+                            asset_item.setHidden(False)
+                    else:
+                        asset_item.setHidden(True)
+                elif not tags:
+                    if regex:
+                        if not regex.search(asset_item.asset_data["asset_name"]):
+                            asset_item.setHidden(True)
+                        else:
+                            asset_item.setHidden(False)
+                    else:
+                        asset_item.setHidden(False)
 
         self.blockSignals(False)
 
@@ -135,6 +147,7 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
         self.assets_tw = AssetTreeWidget()
         self.assets_tw.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.assets_tw.setColumnWidth(0, self.dims[0] * .225)
 
         self.populate_libraries_tw()
 
@@ -185,6 +198,8 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
         self.assets_tw.customContextMenuRequested.connect(self.show_assets_tw_context_menu)
 
+        self.search_le.textChanged.connect(self.refresh_assets)
+
     def create_custom_connections(self, connections):
         for connection in connections:
             widget = getattr(self, connection["widget"])
@@ -227,6 +242,7 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
         tags = []
         libraries = []
+        regex = None
 
         for item in current_selection:
             if item.is_tag and item.text(0) not in tags:
@@ -235,9 +251,10 @@ class AssetBrowserWidget(QtWidgets.QWidget):
             if item.library not in libraries:
                 libraries.append(item.library)
 
-        logger.debug((libraries, tags))
+        if self.search_le.text():
+            regex = re.compile(self.search_le.text())
 
-        self.assets_tw.refresh_assets(libraries, tags)
+        self.assets_tw.refresh_assets(libraries, tags, regex)
 
     def show_assets_tw_context_menu(self, eventPosition):
         asset_item = self.assets_tw.itemAt(eventPosition)

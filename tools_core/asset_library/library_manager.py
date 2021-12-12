@@ -262,7 +262,10 @@ def update_asset_in_library(library, asset, asset_data):
 
 
 def refresh_all_libraries():
-    for library in LIBRARIES.keys():
+    for library, library_path in LIBRARIES.items():
+        if not os.path.isdir(library_path):
+            continue
+
         create_library_data(library)
 
 
@@ -533,4 +536,6 @@ def _delete_library_jsons():
 
 
 if __name__ == '__main__':
-    add_asset_tag("model", "aman", ["test_tag", "test_tag1"])
+    _delete_library_jsons()
+
+    refresh_all_libraries()

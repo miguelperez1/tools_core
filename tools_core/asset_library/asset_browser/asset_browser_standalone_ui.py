@@ -26,7 +26,6 @@ class AssetBrowser(QtWidgets.QWidget):
         self.create_widgets()
         self.create_layout()
         self.create_connections()
-        self.custom_browser_setup()
 
     def create_actions(self):
         pass
@@ -78,19 +77,16 @@ class AssetBrowser(QtWidgets.QWidget):
     def create_widgets(self):
         self.asset_browser = AssetBrowserWidget.AssetBrowserWidget()
 
-        self.test_btn = QtWidgets.QPushButton("Test")
-
     def create_layout(self):
         main_layout = QtWidgets.QVBoxLayout(self)
 
         main_layout.addWidget(self.asset_browser)
-        main_layout.addWidget(self.test_btn)
 
     def create_connections(self):
         pass
 
     def create_custom_connections(self):
-        self.connection_data = [
+        connection_data = [
             {
                 "widget": "assets_tw",
                 "signal": "itemClicked",
@@ -98,15 +94,12 @@ class AssetBrowser(QtWidgets.QWidget):
             }
         ]
 
-        self.asset_browser.create_custom_connections(self.connection_data)
+        self.asset_browser.create_custom_connections(connection_data)
 
     def custom_browser_setup(self):
         # Custom Connections
         self.create_custom_connections()
         self.create_custom_actions()
-
-    def test_connection(self):
-        print("hello")
 
 
 def main():
@@ -127,7 +120,7 @@ def main():
     dark_palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.red)
     dark_palette.setColor(QtGui.QPalette.Link, QtGui.QColor(42, 130, 218))
     dark_palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(42, 130, 218))
-    dark_palette.setColor(QtGui.QPalette.Highlight, QtCore.Qt.black)
+    # dark_palette.setColor(QtGui.QPalette.Highlight, QtCore.Qt.black)
     app.setPalette(dark_palette)
 
     browser = AssetBrowser()
