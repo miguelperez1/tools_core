@@ -261,7 +261,16 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
         context_menu = self.library_menus[asset_item.library]
 
-        action = context_menu.exec_(self.assets_tw.mapToGlobal(eventPosition))
+        for action in self.library_menu_actions[asset_item.library]:
+            if hasattr(action, "action_asset_data_condition"):
+                condition_key = getattr(action, "action_asset_data_condition")
+
+                if not asset_item.asset_data[condition_key]:
+                    context_menu.removeAction(action)
+                elif asset_item.asset_data[condition_key] and action not in context_menu.actions():
+                    context_menu.addAction(action)
+
+        _ = context_menu.exec_(self.assets_tw.mapToGlobal(eventPosition))
 
     def open_explorer_action_callback(self):
         if not self.assets_tw.selectedItems():
@@ -289,6 +298,11 @@ class AssetBrowserWidget(QtWidgets.QWidget):
                     menu.addSeparator()
                     continue
 
+                if "action_asset_data_condition" in action_data.keys():
+                    action_object.action_asset_data_condition = action_data["action_asset_data_condition"]
+
                 action_object.triggered.connect(action_callback)
+
+                self.library_menu_actions[library].append(action_object)
 
                 menu.addAction(action_object)
