@@ -9,17 +9,17 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(10)
 
-LIBRARIES = {
-    'root': r"F:\share\assets\libraries",
-    'model': r"F:\share\assets\libraries\model",
-    'material': r"F:\share\assets\libraries\material",
-    'gobolights': r"F:\share\assets\libraries\gobolights",
-    'hdri': r"F:\share\assets\libraries\hdri",
-    'plants': r"F:\share\assets\libraries\plants",
-    'rigs': r"F:\share\assets\libraries\rigs",
-    'studiolights': r"F:\share\assets\libraries\studiolights",
-    'texture': r"F:\share\assets\libraries\texture",
-}
+LIBRARIES = OrderedDict()
+
+LIBRARIES['root'] = r"F:\share\assets\libraries"
+LIBRARIES['model'] = r"F:\share\assets\libraries\model"
+LIBRARIES['material'] = r"F:\share\assets\libraries\material"
+LIBRARIES['studiolights'] = r"F:\share\assets\libraries\studiolights"
+LIBRARIES['hdri'] = r"F:\share\assets\libraries\hdri"
+LIBRARIES['plants'] = r"F:\share\assets\libraries\plants"
+LIBRARIES['gobolights'] = r"F:\share\assets\libraries\gobolights"
+LIBRARIES['rigs'] = r"F:\share\assets\libraries\rigs"
+LIBRARIES['texture'] = r"F:\share\assets\libraries\texture"
 
 STD_LIBRARIES = [
     "model",
