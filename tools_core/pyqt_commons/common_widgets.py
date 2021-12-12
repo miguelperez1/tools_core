@@ -20,5 +20,5 @@ class PreviewLabel(QtWidgets.QLabel):
         self.setPixmap(self.pixmap)
 
     def set_default(self):
-        self.setPixmap(QtGui.QPixmap(r'F:\share\tools\core\asset_browser\icons\default.png').scaledToWidth(100,
+        self.setPixmap(QtGui.QPixmap(r"F:\share\tools\tools_core\tools_core\asset_library\asset_browser\icons\default.png").scaledToWidth(100,
                                                                                                            QtCore.Qt.SmoothTransformation))
