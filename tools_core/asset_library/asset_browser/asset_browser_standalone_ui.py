@@ -127,7 +127,7 @@ def main():
     dark_palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.red)
     dark_palette.setColor(QtGui.QPalette.Link, QtGui.QColor(42, 130, 218))
     dark_palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(42, 130, 218))
-    dark_palette.setColor(QtGui.QPalette.Highlight, QtCore.Qt.black)
+    dark_palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(45, 45, 48))
     app.setPalette(dark_palette)
 
     browser = AssetBrowser()
