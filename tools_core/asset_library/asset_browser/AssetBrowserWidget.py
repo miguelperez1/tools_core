@@ -18,17 +18,15 @@ logger.setLevel(10)
 
 
 # TODO CBB Autocompleter
-# TODO Asset Counter
-# TODO Log LE
 
 
-class StatusLE(QtWidgets.QLineEdit):
+class LogLE(QtWidgets.QLineEdit):
     def __init__(self):
-        super(StatusLE, self).__init__()
+        super(LogLE, self).__init__()
 
         self.setReadOnly(True)
 
-    def set_status(self, msg, level):
+    def log(self, msg, level):
         options = {
             "info": "lime-green",
             "debug": "yellow",
@@ -40,7 +38,8 @@ class StatusLE(QtWidgets.QLineEdit):
 
         getattr(logger, level)("%s", msg)
 
-        pass
+        self.setText(msg)
+        self.setStyleSheet("color: {}".format(options[level]))
 
 
 class AssetTreeWidget(QtWidgets.QTreeWidget):
@@ -211,10 +210,10 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
         self.asset_counter_le = QtWidgets.QLineEdit()
         self.asset_counter_le.setReadOnly(True)
-        self.asset_counter_le.setMaximumWidth(self.dims[0] * .075)
+        self.asset_counter_le.setMaximumWidth(self.dims[0] * .0325)
         self.asset_counter_le.setAlignment(QtCore.Qt.AlignRight)
 
-        self.status_le = QtWidgets.QLineEdit()
+        self.status_le = LogLE()
 
         # Context Menus
         self.library_menus = {}
@@ -281,7 +280,7 @@ class AssetBrowserWidget(QtWidgets.QWidget):
             widget = getattr(self, connection["widget"])
 
             if not widget:
-                logger.error("Signal %s for %s not found", connection["signal"], connection["widget"])
+                logger.error("%s not found", connection["widget"])
                 continue
 
             signal = getattr(widget, connection["signal"])
@@ -366,7 +365,7 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
         for action in self.library_menu_actions[asset_item.library]:
             if hasattr(action, "action_asset_data_conditions"):
-                condition_keys = getattr(action, "action_asset_data_conditions")
+                condition_keys = action.action_asset_data_conditions
 
                 is_valid = True
 
@@ -424,3 +423,6 @@ class AssetBrowserWidget(QtWidgets.QWidget):
                 self.library_menu_actions[library].append(action_object)
 
                 menu.addAction(action_object)
+
+    def log(self, msg, level):
+        self.status_le.log(msg, level)
