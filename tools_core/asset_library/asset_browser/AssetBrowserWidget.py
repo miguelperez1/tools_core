@@ -177,7 +177,7 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
     def create_layout(self):
         main_layout = QtWidgets.QVBoxLayout(self)
-        main_layout.setContentsMargins(self.margin, self.margin, self.margin, self.margin)
+        main_layout.setContentsMargins(self.margin, self.margin*.5, self.margin, self.margin)
 
         search_layout = QtWidgets.QHBoxLayout()
         search_layout.addWidget(self.search_lbl)
