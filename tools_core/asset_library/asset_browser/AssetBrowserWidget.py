@@ -107,7 +107,7 @@ class AssetTreeWidget(QtWidgets.QTreeWidget):
 
 
 class AssetBrowserWidget(QtWidgets.QWidget):
-    def __init__(self, parent=None, margin=30, dims=(1280, 720)):
+    def __init__(self, parent=None, margin=15, dims=(1280, 720)):
         super(AssetBrowserWidget, self).__init__(parent)
         self.margin = margin
         dims_margin = 0.95
@@ -185,6 +185,8 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
         main_layout.addLayout(search_layout)
 
+        main_layout.addWidget(cw.QHLine())
+
         tws_layout = QtWidgets.QHBoxLayout()
 
         tws_layout.addWidget(self.libraries_tw)
@@ -203,7 +205,17 @@ class AssetBrowserWidget(QtWidgets.QWidget):
     def create_custom_connections(self, connections):
         for connection in connections:
             widget = getattr(self, connection["widget"])
+
+            if not widget:
+                logger.error("Signal %s for %s not found", connection["signal"], connection["widget"])
+                continue
+
             signal = getattr(widget, connection["signal"])
+
+            if not signal:
+                logger.error("Signal %s for %s not found", connection["signal"], connection["widget"])
+                continue
+
             signal.connect(connection["function"])
 
     def populate_libraries_tw(self):
@@ -262,12 +274,21 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         context_menu = self.library_menus[asset_item.library]
 
         for action in self.library_menu_actions[asset_item.library]:
-            if hasattr(action, "action_asset_data_condition"):
-                condition_key = getattr(action, "action_asset_data_condition")
+            if hasattr(action, "action_asset_data_conditions"):
+                condition_keys = getattr(action, "action_asset_data_conditions")
 
-                if not asset_item.asset_data[condition_key]:
+                is_valid = True
+
+                for condition_key in condition_keys:
+                    if not asset_item.asset_data[condition_key]:
+                        is_valid = False
+                        break
+                    elif asset_item.asset_data[condition_key] and action not in context_menu.actions():
+                        is_valid = True
+
+                if not is_valid:
                     context_menu.removeAction(action)
-                elif asset_item.asset_data[condition_key] and action not in context_menu.actions():
+                else:
                     context_menu.addAction(action)
 
         _ = context_menu.exec_(self.assets_tw.mapToGlobal(eventPosition))
@@ -287,6 +308,7 @@ class AssetBrowserWidget(QtWidgets.QWidget):
                 subprocess.Popen('explorer "{}"'.format(lm.LIBRARIES[current_library]))
 
     def add_actions_to_menus(self, actions_data):
+        registered_actions = []
         for library, actions in actions_data.items():
             menu = self.library_menus[library]
 
@@ -298,10 +320,14 @@ class AssetBrowserWidget(QtWidgets.QWidget):
                     menu.addSeparator()
                     continue
 
-                if "action_asset_data_condition" in action_data.keys():
-                    action_object.action_asset_data_condition = action_data["action_asset_data_condition"]
+                if "action_asset_data_conditions" in action_data.keys():
+                    action_object.action_asset_data_conditions = action_data["action_asset_data_conditions"]
 
-                action_object.triggered.connect(action_callback)
+                if action_object not in registered_actions:
+                    logger.debug("Connecting action %s to %s", action_object.text(), action_callback)
+
+                    action_object.triggered.connect(action_callback)
+                    registered_actions.append(action_object)
 
                 self.library_menu_actions[library].append(action_object)
 

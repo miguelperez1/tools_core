@@ -1,4 +1,6 @@
+import os
 import sys
+import ctypes
 from functools import partial
 
 from PySide2 import QtCore
@@ -7,25 +9,27 @@ from PySide2 import QtGui
 
 from tools_core.asset_library.asset_browser import AssetBrowserWidget
 from tools_core.asset_library import library_manager as lm
+from tools_core.pyqt_commons import common_widgets as cw
 
 
 class AssetBrowser(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(AssetBrowser, self).__init__(parent)
 
-        self.setWindowTitle("Window")
+        self.setWindowTitle("Asset Browser")
         self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)
 
         self.dims = (1920, 1080)
 
         self.setMinimumSize(self.dims[0], self.dims[1])
 
-        self.setObjectName("ExampleDialog")
+        self.setObjectName("AssetBrowser")
 
         self.create_actions()
         self.create_widgets()
         self.create_layout()
         self.create_connections()
+        self.custom_browser_setup()
 
     def create_actions(self):
         pass
@@ -37,42 +41,25 @@ class AssetBrowser(QtWidgets.QWidget):
             if not lm.get_library_data(library):
                 continue
 
-            self.custom_actions[library] = {}
+            self.custom_actions[library] = []
 
-        # Model library custom actions
-        model_action = QtWidgets.QAction("This is model")
-        material_action = QtWidgets.QAction("This is mtl")
-        after_action = QtWidgets.QAction("after")
+        open_in_maya_action = QtWidgets.QAction("Open in Maya")
 
-        self.custom_actions["model"] = [
-            {
-                "action_object": model_action,
-                "action_callback": partial(self.model_action_callback)
-            },
-            {
-                "action_object": "separator",
-                "action_callback": ""
-            },
-            {
-                "action_object": after_action,
-                "action_callback": partial(print, "hello")
-            }
-        ]
+        for std_library in lm.STD_LIBRARIES:
+            if std_library not in self.custom_actions.keys():
+                continue
 
-        self.custom_actions["material"] = [
-            {
-                "action_object": material_action,
-                "action_callback": partial(self.material_action_callback)
-            }
-        ]
+            action_datas = [
+                {
+                    "action_object": open_in_maya_action,
+                    "action_callback": partial(self.open_in_maya_action_callback),
+                    "action_asset_data_conditions": ["maya_file"]
+                }
+            ]
+
+            self.custom_actions[std_library].extend(action_datas)
 
         self.asset_browser.add_actions_to_menus(self.custom_actions)
-
-    def model_action_callback(self):
-        print("this is model")
-
-    def material_action_callback(self):
-        print("mate")
 
     def create_widgets(self):
         self.asset_browser = AssetBrowserWidget.AssetBrowserWidget()
@@ -86,42 +73,37 @@ class AssetBrowser(QtWidgets.QWidget):
         pass
 
     def create_custom_connections(self):
-        connection_data = [
-            {
-                "widget": "assets_tw",
-                "signal": "itemClicked",
-                "function": lambda: self.test_connection()
-            }
-        ]
+        connection_data = []
 
         self.asset_browser.create_custom_connections(connection_data)
 
     def custom_browser_setup(self):
-        # Custom Connections
         self.create_custom_connections()
         self.create_custom_actions()
 
+    def open_in_maya_action_callback(self):
+        items = self.asset_browser.assets_tw.selectedItems()
+
+        if not items:
+            return
+
+        for item in items:
+            os.startfile(item.asset_data["maya_file"])
+
 
 def main():
+    appid = "tools_core.asset_library.asset_browser.asset_browser_standalone_ui"
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
+
     app = QtWidgets.QApplication(sys.argv)
+
+    app_icon = QtGui.QIcon(r"F:\share\tools\tools_core\tools_core\asset_library\asset_browser\icons\browser.png")
+
+    app.setWindowIcon(app_icon)
 
     app.setStyle(QtWidgets.QStyleFactory.create("fusion"))
 
-    dark_palette = QtGui.QPalette()
-    dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(45, 45, 45))
-    dark_palette.setColor(QtGui.QPalette.WindowText, QtGui.QColor(208, 208, 208))
-    dark_palette.setColor(QtGui.QPalette.Base, QtGui.QColor(25, 25, 25))
-    dark_palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(208, 208, 208))
-    dark_palette.setColor(QtGui.QPalette.ToolTipBase, QtGui.QColor(208, 208, 208))
-    dark_palette.setColor(QtGui.QPalette.ToolTipBase, QtGui.QColor(208, 208, 208))
-    dark_palette.setColor(QtGui.QPalette.Text, QtGui.QColor(208, 208, 208))
-    dark_palette.setColor(QtGui.QPalette.Button, QtGui.QColor(45, 45, 48))
-    dark_palette.setColor(QtGui.QPalette.ButtonText, QtGui.QColor(208, 208, 208))
-    dark_palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.red)
-    dark_palette.setColor(QtGui.QPalette.Link, QtGui.QColor(42, 130, 218))
-    dark_palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(42, 130, 218))
-    # dark_palette.setColor(QtGui.QPalette.Highlight, QtCore.Qt.black)
-    app.setPalette(dark_palette)
+    app.setPalette(cw.DarkPalette())
 
     browser = AssetBrowser()
     browser.show()
