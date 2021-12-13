@@ -2,6 +2,7 @@ import os
 import sys
 import ctypes
 import logging
+import subprocess
 from functools import partial
 
 from PySide2 import QtCore
@@ -111,10 +112,11 @@ class AssetBrowser(QtWidgets.QWidget):
             return
 
         for item in items:
-            os.startfile(item.asset_data["maya_file"])
+            subprocess.Popen(["maya", item.asset_data["maya_file"]])
 
     def send_to_nuke_action_callback(self):
         print("send_to_nuke_action_callback")
+
 
 def main():
     appid = "tools_core.asset_library.asset_browser.asset_browser_standalone_ui"

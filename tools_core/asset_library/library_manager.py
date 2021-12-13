@@ -49,6 +49,7 @@ IMG_FILE_TYPES = [
 ASSET_KEY_ORDER = [
     "asset_name",
     "asset_preview",
+    "asset_library",
     "asset_path",
     "maya_file",
     "material_data",
@@ -63,7 +64,7 @@ ASSET_KEY_ORDER = [
 ]
 
 
-def create_library_data(library, override=True):
+def create_library_data(library, override=True, update_asset_data=False):
     if library not in STD_LIBRARIES and library not in IMG_LIBRARIES:
         logger.error("%s is not a valid library type", library)
         return False
@@ -104,6 +105,8 @@ def create_library_data(library, override=True):
                 for key in ASSET_KEY_ORDER:
                     if key in asset_data.keys():
                         ordered_asset_data[key] = asset_data[key]
+                    elif key == "asset_library":
+                        ordered_asset_data[key] = library
 
                 library_data["assets"][asset_data["asset_name"]] = ordered_asset_data
 
@@ -124,7 +127,8 @@ def create_library_data(library, override=True):
                     "scale": None,
                     "material_data": {},
                     "megascan_id": "",
-                    "tags": []
+                    "tags": [],
+                    "asset_library": library
                 }
 
                 # Find asset preview
@@ -165,7 +169,6 @@ def create_library_data(library, override=True):
                                 asset_data["vrproxy_maya"] = vrproxy_path
 
                 # Write asset data json
-
                 write_asset_data(library, asset, sort_asset_data(asset_data))
 
     # IMG_LIBRARY BUILDS
@@ -197,6 +200,7 @@ def create_library_data(library, override=True):
             asset_data["asset_name"] = asset_name
             asset_data["asset_preview"] = ""
             asset_data["asset_path"] = asset_path
+            asset_data["asset_library"] = library
             asset_data["tags"] = asset_tags
 
             # asset_preview
@@ -222,6 +226,9 @@ def create_library_data(library, override=True):
             if not os.path.isfile(asset_data["asset_path"]):
                 logger.warning("%s no longer exists, removing from library_data", asset)
                 library_data["assets"].pop(asset)
+
+        if update_asset_data:
+            write_asset_data(library, asset, asset_data, update_library_data=False)
 
     # Order library data by asset name
     ordered_library_data = OrderedDict()
@@ -261,12 +268,12 @@ def update_asset_in_library(library, asset, asset_data):
         return False
 
 
-def refresh_all_libraries():
+def refresh_all_libraries(update_asset_data=False):
     for library, library_path in LIBRARIES.items():
         if not os.path.isdir(library_path):
             continue
 
-        create_library_data(library)
+        create_library_data(library, update_asset_data=update_asset_data)
 
 
 def get_library_data(library):
@@ -281,13 +288,26 @@ def get_library_data(library):
 
 
 def get_asset_data(library, asset):
-    asset_json_path = os.path.join(LIBRARIES[library], asset, "asset_data.json")
+    asset_data = None
 
-    if not os.path.isfile(asset_json_path):
-        logger.error("Could not find asset json path for %s", asset)
-        return None
+    if library in STD_LIBRARIES:
 
-    asset_data = json.load(open(asset_json_path))
+        asset_json_path = os.path.join(LIBRARIES[library], asset, "asset_data.json")
+
+        if not os.path.isfile(asset_json_path):
+            logger.error("Could not find asset json path for %s", asset)
+            return None
+
+        asset_data = json.load(open(asset_json_path))
+
+    else:
+        library_data = get_library_data(library)
+
+        if asset not in library_data["assets"].keys():
+            logger.error("Could not find asset data")
+            return None
+
+        asset_data = library_data["assets"][asset]
 
     return asset_data
 
@@ -313,10 +333,20 @@ def write_library_data(library, library_data, override=True):
     ordered_library_data["assets"] = OrderedDict()
     ordered_library_data["tags"] = []
 
+    updated_tags = []
+
     for asset in sorted(library_data["assets"].keys(), key=lambda a: a.lower()):
         ordered_library_data["assets"][asset] = sort_asset_data(library_data["assets"][asset])
 
-    ordered_library_data["tags"] = sorted(list(set(library_data["tags"])))
+        updated_tags.extend(library_data["assets"][asset]["tags"])
+
+    ordered_library_data["tags"] = sorted(list(set(updated_tags)))
+
+    if " " in ordered_library_data["tags"]:
+        ordered_library_data["tags"].remove(" ")
+
+    if "" in ordered_library_data["tags"]:
+        ordered_library_data["tags"].remove("")
 
     # Write data
     with open(library_json_path, "w") as f:
@@ -330,37 +360,58 @@ def write_library_data(library, library_data, override=True):
         return True
     else:
         logger.error("Error writing %s library data", library)
+        for asset, asset_data in library_data["assets"].items():
+            if asset not in data["assets"].keys():
+                logger.error("%s not written library data", asset)
+                continue
+            logger.debug(set(data["assets"][asset]) - set(asset_data))
         return False
 
 
 def write_asset_data(library, asset, asset_data, override=True, update_library_data=True):
-    asset_json_path = os.path.join(LIBRARIES[library], asset, "asset_data.json")
+    new_data = {}
 
     if get_asset_data(library, asset) and not override:
         return False
 
-    with open(asset_json_path, "w") as f:
-        json.dump(asset_data, f, indent=4)
+    if library in STD_LIBRARIES:
+        asset_json_path = os.path.join(LIBRARIES[library], asset, "asset_data.json")
 
-    if update_library_data:
-        update_asset_in_library(library, asset, asset_data)
+        with open(asset_json_path, "w") as f:
+            json.dump(asset_data, f, indent=4)
 
-    data = json.load(open(asset_json_path))
+        new_data = json.load(open(asset_json_path))
 
-    if asset_data == data:
+        if update_library_data:
+            update_asset_in_library(library, asset, asset_data)
+
+    elif library in IMG_LIBRARIES:
+        library_data = get_library_data(library)
+
+        library_data["assets"][asset] = asset_data
+
+        write_library_data(library, library_data)
+
+        new_data = get_library_data(library)["assets"][asset]
+
+    if asset_data == new_data:
         logger.info("Successfully wrote %s asset data", asset)
         return True
     else:
         return False
 
 
-def add_asset_tag(library, asset, tags):
+def update_asset_tags(library, asset, tags, override=True):
     asset_data = get_asset_data(library, asset)
 
     if not asset_data:
         return
 
-    current_tags = asset_data["tags"]
+    if not override:
+        current_tags = asset_data["tags"]
+    else:
+        current_tags = []
+
     new_tags = []
 
     if isinstance(tags, str):
@@ -373,9 +424,19 @@ def add_asset_tag(library, asset, tags):
 
     new_tags.extend(current_tags)
 
+    if " " in new_tags:
+        new_tags.remove(" ")
+
+    if "" in new_tags:
+        new_tags.remove("")
+
     asset_data["tags"] = sorted(list(set(new_tags)))
 
-    write_asset_data(library, asset, asset_data)
+    if write_asset_data(library, asset, asset_data):
+        logger.info("Updated %s tags", asset_data["asset_name"])
+        return True
+    else:
+        return False
 
 
 # HELPER TRANSITION FUNCTIONS
@@ -415,7 +476,8 @@ def _reformat_asset_datas():
                 "scale": 1.0,
                 "material_data": {},
                 "megascan_id": "",
-                "tags": []
+                "tags": [],
+                "library": library
             }
 
             # Copy existing data
@@ -538,4 +600,4 @@ def _delete_library_jsons():
 if __name__ == '__main__':
     _delete_library_jsons()
 
-    refresh_all_libraries()
+    refresh_all_libraries(update_asset_data=True)

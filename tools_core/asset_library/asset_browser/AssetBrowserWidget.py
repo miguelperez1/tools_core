@@ -18,20 +18,56 @@ logger.setLevel(10)
 
 
 # TODO CBB Autocompleter
-# TODO Edit tags
+# TODO Asset Counter
+# TODO Log LE
+
+
+class StatusLE(QtWidgets.QLineEdit):
+    def __init__(self):
+        super(StatusLE, self).__init__()
+
+        self.setReadOnly(True)
+
+    def set_status(self, msg, level):
+        options = {
+            "info": "lime-green",
+            "debug": "yellow",
+            "error": "red"
+        }
+
+        if level not in options.keys():
+            return
+
+        getattr(logger, level)("%s", msg)
+
+        pass
 
 
 class AssetTreeWidget(QtWidgets.QTreeWidget):
     tags_updated = QtCore.Signal()
 
+    def onTreeWidgetItemDoubleClicked(self, item, column):
+        # Only allow the tags column to be edited
+        if column == 2:
+            self.editItem(item, column)
+        else:
+            return
+
     def __init__(self):
         super(AssetTreeWidget, self).__init__()
         self.header_item = QtWidgets.QTreeWidgetItem(["Preview", "Name", "Tags"])
         self.setHeaderItem(self.header_item)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+
+        self.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.itemDoubleClicked.connect(self.onTreeWidgetItemDoubleClicked)
+        self.setAlternatingRowColors(True)
 
         self.asset_items = []
 
         self.create_all_asset_items()
+
+        self.itemChanged.connect(self.update_tags)
 
     def create_all_asset_items(self):
         self.blockSignals(True)
@@ -48,6 +84,12 @@ class AssetTreeWidget(QtWidgets.QTreeWidget):
                 asset_item.asset_data = asset_data
                 asset_item.library = library
                 asset_preview = asset_data["asset_preview"]
+                asset_item.setFlags(asset_item.flags() | QtCore.Qt.ItemIsEditable)
+
+                item_font = QtGui.QFont()
+                item_font.setPointSize(10)
+                asset_item.setFont(1, item_font)
+                asset_item.setFont(2, item_font)
 
                 asset_item.setText(1, asset)
 
@@ -105,6 +147,22 @@ class AssetTreeWidget(QtWidgets.QTreeWidget):
 
         self.blockSignals(False)
 
+    def update_tags(self, item, column):
+        asset_data = item.asset_data
+
+        if not lm.get_library_data(asset_data["asset_library"]):
+            return
+
+        lm.update_asset_tags(asset_data["asset_library"], asset_data["asset_name"], item.text(2))
+
+        new_asset_data = lm.get_asset_data(asset_data["asset_library"], asset_data["asset_name"])
+
+        item.asset_data = new_asset_data
+
+        item.setText(2, ",".join(new_asset_data["tags"]))
+
+        self.tags_updated.emit()
+
 
 class AssetBrowserWidget(QtWidgets.QWidget):
     def __init__(self, parent=None, margin=15, dims=(1280, 720)):
@@ -151,6 +209,13 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
         self.populate_libraries_tw()
 
+        self.asset_counter_le = QtWidgets.QLineEdit()
+        self.asset_counter_le.setReadOnly(True)
+        self.asset_counter_le.setMaximumWidth(self.dims[0] * .075)
+        self.asset_counter_le.setAlignment(QtCore.Qt.AlignRight)
+
+        self.status_le = QtWidgets.QLineEdit()
+
         # Context Menus
         self.library_menus = {}
 
@@ -177,7 +242,7 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
     def create_layout(self):
         main_layout = QtWidgets.QVBoxLayout(self)
-        main_layout.setContentsMargins(self.margin, self.margin*.5, self.margin, self.margin)
+        main_layout.setContentsMargins(self.margin, self.margin * .5, self.margin, self.margin)
 
         search_layout = QtWidgets.QHBoxLayout()
         search_layout.addWidget(self.search_lbl)
@@ -194,6 +259,13 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
         main_layout.addLayout(tws_layout)
 
+        status_layout = QtWidgets.QHBoxLayout()
+
+        status_layout.addWidget(self.status_le)
+        status_layout.addWidget(self.asset_counter_le)
+
+        main_layout.addLayout(status_layout)
+
     def create_connections(self):
         self.libraries_tw.itemSelectionChanged.connect(self.refresh_assets)
         self.open_explorer_action.triggered.connect(self.open_explorer_action_callback)
@@ -201,6 +273,8 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         self.assets_tw.customContextMenuRequested.connect(self.show_assets_tw_context_menu)
 
         self.search_le.textChanged.connect(self.refresh_assets)
+
+        self.assets_tw.tags_updated.connect(self.populate_libraries_tw)
 
     def create_custom_connections(self, connections):
         for connection in connections:
@@ -219,6 +293,11 @@ class AssetBrowserWidget(QtWidgets.QWidget):
             signal.connect(connection["function"])
 
     def populate_libraries_tw(self):
+        current_selection = []
+
+        if self.libraries_tw.selectedItems():
+            current_selection = [i.text(0) for i in self.libraries_tw.selectedItems()]
+
         self.libraries_tw.blockSignals(True)
         self.libraries_tw.clear()
 
@@ -235,6 +314,9 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
             self.libraries_tw.addTopLevelItem(library_item)
 
+            if library in current_selection:
+                library_item.setSelected(True)
+
             for tag in library_data["tags"]:
                 tag_item = QtWidgets.QTreeWidgetItem()
                 tag_item.library = library
@@ -244,7 +326,12 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
                 library_item.addChild(tag_item)
 
+                if tag in current_selection:
+                    tag_item.setSelected(True)
+
         self.libraries_tw.blockSignals(False)
+
+        self.refresh_assets()
 
     def refresh_assets(self):
         current_selection = self.libraries_tw.selectedItems()
@@ -267,6 +354,10 @@ class AssetBrowserWidget(QtWidgets.QWidget):
             regex = re.compile(self.search_le.text())
 
         self.assets_tw.refresh_assets(libraries, tags, regex)
+
+        asset_count = len(lm.get_library_data(self.libraries_tw.selectedItems()[0].library)["assets"].keys())
+
+        self.asset_counter_le.setText(str(asset_count))
 
     def show_assets_tw_context_menu(self, eventPosition):
         asset_item = self.assets_tw.itemAt(eventPosition)
@@ -297,12 +388,12 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         if not self.assets_tw.selectedItems():
             return
 
-        current_library = self.libraries_tw.selectedItems()[0].library
+        current_library = self.assets_tw.selectedItems()[0].asset_data["asset_library"]
 
         for item in self.assets_tw.selectedItems():
             asset = item.text(1)
 
-            if current_library in ['material', 'model', 'rigs', 'plants']:
+            if current_library in lm.STD_LIBRARIES:
                 subprocess.Popen('explorer "{}"'.format(os.path.join(lm.LIBRARIES[current_library], asset)))
             else:
                 subprocess.Popen('explorer "{}"'.format(lm.LIBRARIES[current_library]))
@@ -314,11 +405,12 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
             for action_data in actions:
                 action_object = action_data["action_object"]
-                action_callback = action_data["action_callback"]
 
                 if action_object == "separator":
                     menu.addSeparator()
                     continue
+
+                action_callback = action_data["action_callback"]
 
                 if "action_asset_data_conditions" in action_data.keys():
                     action_object.action_asset_data_conditions = action_data["action_asset_data_conditions"]

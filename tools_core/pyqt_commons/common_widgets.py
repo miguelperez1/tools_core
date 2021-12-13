@@ -1,3 +1,5 @@
+import os
+
 from PySide2 import QtCore
 from PySide2 import QtGui
 from PySide2 import QtWidgets
@@ -171,6 +173,9 @@ class PreviewLabel(QtWidgets.QLabel):
         self.set_default()
 
     def set_image(self, path, scale=160):
+        if not os.path.isfile(path):
+            self.set_default()
+
         self.pixmap = QtGui.QPixmap(path).scaledToWidth(scale, QtCore.Qt.SmoothTransformation)
         self.setPixmap(self.pixmap)
 
@@ -307,7 +312,7 @@ class DarkPalette(QtGui.QPalette):
         self.setColor(QtGui.QPalette.Window, QtGui.QColor(45, 45, 45))
         self.setColor(QtGui.QPalette.WindowText, QtGui.QColor(208, 208, 208))
         self.setColor(QtGui.QPalette.Base, QtGui.QColor(37, 37, 37))
-        self.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(208, 208, 208))
+        self.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(45, 45, 45))
         self.setColor(QtGui.QPalette.ToolTipBase, QtGui.QColor(208, 208, 208))
         self.setColor(QtGui.QPalette.ToolTipBase, QtGui.QColor(208, 208, 208))
         self.setColor(QtGui.QPalette.Text, QtGui.QColor(208, 208, 208))
