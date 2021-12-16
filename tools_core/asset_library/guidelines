@@ -1,0 +1,27 @@
+asset_data = {
+    "asset_name": str,
+    "asset_preview": str,
+    "asset_type": str,
+    "asset_path": str,
+    "usd": str,
+    "vrmesh": str,
+    "vrproxy_maya": str,
+    "vrscene": str,
+    "vrscene_maya": str,
+    "maya_file": str,
+    "mesh": str,
+    "scale": float,
+    "material_data": dict,
+    "megascan_id": str,
+    "tags": list
+}
+
+material_data = [
+    {
+        "material_name": str,
+        "material_assignment": str,
+        "textures": {
+            "diffuse": str
+        }
+    }
+]

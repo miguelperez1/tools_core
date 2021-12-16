@@ -149,12 +149,12 @@ class AssetTreeWidget(QtWidgets.QTreeWidget):
     def update_tags(self, item, column):
         asset_data = item.asset_data
 
-        if not lm.get_library_data(asset_data["asset_library"]):
+        if not lm.get_library_data(asset_data["asset_type"]):
             return
 
-        lm.update_asset_tags(asset_data["asset_library"], asset_data["asset_name"], item.text(2))
+        lm.update_asset_tags(asset_data["asset_type"], asset_data["asset_name"], item.text(2))
 
-        new_asset_data = lm.get_asset_data(asset_data["asset_library"], asset_data["asset_name"])
+        new_asset_data = lm.get_asset_data(asset_data["asset_type"], asset_data["asset_name"])
 
         item.asset_data = new_asset_data
 
@@ -387,13 +387,11 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         if not self.assets_tw.selectedItems():
             return
 
-        current_library = self.assets_tw.selectedItems()[0].asset_data["asset_library"]
+        current_library = self.assets_tw.selectedItems()[0].asset_data["asset_type"]
 
         for item in self.assets_tw.selectedItems():
-            asset = item.text(1)
-
-            if current_library in lm.STD_LIBRARIES:
-                subprocess.Popen('explorer "{}"'.format(os.path.join(lm.LIBRARIES[current_library], asset)))
+            if item.asset_data["asset_type"] in lm.STD_LIBRARIES:
+                subprocess.Popen('explorer "{}"'.format(item.asset_data["asset_path"]))
             else:
                 subprocess.Popen('explorer "{}"'.format(lm.LIBRARIES[current_library]))
 
