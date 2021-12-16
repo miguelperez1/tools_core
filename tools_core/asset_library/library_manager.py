@@ -17,6 +17,7 @@ LIBRARIES['Character'] = r"{}\Character".format(LIBRARIES_ROOT)
 LIBRARIES['Prop'] = r"{}\Prop".format(LIBRARIES_ROOT)
 LIBRARIES['Set'] = r"{}\Set".format(LIBRARIES_ROOT)
 LIBRARIES['Transit'] = r"{}\Transit".format(LIBRARIES_ROOT)
+LIBRARIES['Foliage'] = r"{}\Foliage".format(LIBRARIES_ROOT)
 LIBRARIES['Material'] = r"{}\Material".format(LIBRARIES_ROOT)
 LIBRARIES['StudioLights'] = r"{}\StudioLights".format(LIBRARIES_ROOT)
 LIBRARIES['Cucoloris'] = r"{}\Cucoloris".format(LIBRARIES_ROOT)
@@ -28,7 +29,8 @@ STD_LIBRARIES = [
     "Prop",
     "Set",
     "Transit",
-    "Material"
+    "Material",
+    "Foliage"
 ]
 
 IMG_LIBRARIES = [
@@ -116,6 +118,7 @@ def create_library_data(library, override=True):
     elif library in IMG_LIBRARIES:
         for asset in os.listdir(library_root):
             asset_root = os.path.join(library_root, asset)
+            asset_name = asset.split(".")[0]
 
             if not os.path.isfile(asset_root):
                 continue
@@ -126,13 +129,13 @@ def create_library_data(library, override=True):
             # Find preview image
             asset_preview = ""
 
-            asset_preview_path = os.path.join(library_root, "thumbnails", asset.split(".")[0] + "_preview.png")
+            asset_preview_path = os.path.join(library_root, "thumbnails", asset_name + "_preview.png")
 
             if os.path.isfile(asset_preview_path):
                 asset_preview = asset_preview_path
 
             asset_data = {
-                "asset_name": asset,
+                "asset_name": asset_name,
                 "asset_type": library,
                 "asset_path": asset_root,
                 "asset_preview": asset_preview,
@@ -141,14 +144,14 @@ def create_library_data(library, override=True):
 
             # Check for existing asset data
             if get_library_data(library):
-                asset_data_tmp = get_asset_data(library, asset)
+                asset_data_tmp = get_asset_data(library, asset_name)
 
                 if asset_data_tmp:
                     # Store old tags
                     asset_data["tags"] = asset_data_tmp["tags"]
 
             # Add asset_data to library
-            library_data["assets"][asset] = asset_data
+            library_data["assets"][asset_name] = asset_data
 
     # Check if assets in library exists, if not remove
     remove_assets = []

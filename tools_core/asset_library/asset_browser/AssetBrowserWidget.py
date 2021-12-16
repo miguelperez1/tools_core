@@ -183,7 +183,7 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         self.create_connections()
 
     def create_actions(self):
-        self.open_explorer_action = QtWidgets.QAction("Open in Explorer")
+        self.open_asset_explorer_action = QtWidgets.QAction("Open in Explorer")
         self.copy_root_path_action = QtWidgets.QAction("Copy root path")
 
         self.library_menu_actions = {}
@@ -192,9 +192,11 @@ class AssetBrowserWidget(QtWidgets.QWidget):
             self.library_menu_actions[library] = []
 
         self.library_menu_actions["all"] = [
-            self.open_explorer_action,
+            self.open_asset_explorer_action,
             self.copy_root_path_action
         ]
+
+        self.open_library_explorer_action = QtWidgets.QAction("Open in Explorer")
 
     def create_widgets(self):
         # Widgets
@@ -206,6 +208,7 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         self.libraries_tw.setHeaderItem(libraries_header_item)
 
         self.libraries_tw.setMaximumWidth(self.dims[0] * .25)
+        self.libraries_tw.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
 
         self.refresh_btn = cw.ImagePushButton(30, 30)
         self.refresh_btn.set_image(r"F:\share\tools\tools_core\tools_core\pyqt_commons\icons\reload.png")
@@ -277,16 +280,21 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         main_layout.addLayout(status_layout)
 
     def create_connections(self):
-        self.libraries_tw.itemSelectionChanged.connect(self.refresh_assets)
-        self.open_explorer_action.triggered.connect(self.open_explorer_action_callback)
+        # Actions
+        self.open_asset_explorer_action.triggered.connect(self.open_explorer_action_callback)
+        self.open_library_explorer_action.triggered.connect(self.open_library_explorer_action_callback)
 
+        # Menus
         self.assets_tw.customContextMenuRequested.connect(self.show_assets_tw_context_menu)
+        self.libraries_tw.customContextMenuRequested.connect(self.show_libraries_tw_context_menu)
 
+        # Misc
         self.search_le.textChanged.connect(self.refresh_assets)
-
-        self.assets_tw.tags_updated.connect(self.populate_libraries_tw)
-
         self.refresh_btn.clicked.connect(self.refresh_all)
+        self.libraries_tw.itemSelectionChanged.connect(self.refresh_assets)
+
+        # Custom
+        self.assets_tw.tags_updated.connect(self.populate_libraries_tw)
 
     def create_custom_connections(self, connections):
         for connection in connections:
@@ -396,6 +404,13 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
         _ = context_menu.exec_(self.assets_tw.mapToGlobal(eventPosition))
 
+    def show_libraries_tw_context_menu(self, eventPosition):
+        context_menu = QtWidgets.QMenu()
+
+        context_menu.addAction(self.open_library_explorer_action)
+
+        _ = context_menu.exec_(self.libraries_tw.mapToGlobal(eventPosition))
+
     def open_explorer_action_callback(self):
         if not self.assets_tw.selectedItems():
             return
@@ -407,6 +422,13 @@ class AssetBrowserWidget(QtWidgets.QWidget):
                 subprocess.Popen('explorer "{}"'.format(item.asset_data["asset_path"]))
             else:
                 subprocess.Popen('explorer "{}"'.format(lm.LIBRARIES[current_library]))
+
+    def open_library_explorer_action_callback(self):
+        if not self.libraries_tw.selectedItems():
+            return
+
+        for item in self.libraries_tw.selectedItems():
+            subprocess.Popen('explorer "{}"'.format(lm.LIBRARIES[item.library]))
 
     def add_actions_to_menus(self, actions_data):
         registered_actions = []

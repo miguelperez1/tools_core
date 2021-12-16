@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 from tools_core.asset_library import library_manager as lm
 from tools_core.pipeline.Asset import MaterialAsset
+from tools_core.pipeline.Asset import PropAsset
 
 logging.basicConfig()
 
@@ -184,9 +185,12 @@ def build_megascan_models(new=1):
 
             if subdir.endswith(".json"):
                 # Load Json Data
-                json_file = open(os.path.join(megascans_library, dir, subdir), "r")
-                megascan_data = json.load(json_file)
-                json_file.close()
+                try:
+                    json_file = open(os.path.join(megascans_library, dir, subdir), "r")
+                    megascan_data = json.load(json_file)
+                    json_file.close()
+                except Exception:
+                    continue
 
         if megascan_data is None:
             # logger.warning("Could not find megascan data for %s, skipping".format(dir))
@@ -199,7 +203,7 @@ def build_megascan_models(new=1):
             asset_data['megascan_id'] = asset_id
 
         # Get asset name
-        var_num = 1
+        var_num = 0
         asset_name = megascan_data['semanticTags']['name'].lower().replace(" ", "_") + "_var" + str(var_num)
         asset_name = asset_name.replace("__", "_")
 
@@ -253,6 +257,22 @@ def build_megascan_models(new=1):
             asset_data['asset_preview'] = preview_file.replace(".png", ".jpg")
 
         print(lm.sort_asset_data(asset_data))
+
+        new_asset = PropAsset.PropAsset(asset_data)
+
+        try:
+            new_asset.create_asset()
+        except Exception:
+            logger.error("Error building %s", asset_name)
+            continue
+
+        # Check if asset build was successful
+        if os.path.isfile(new_asset.asset_data_json):
+            logger.info("%s build was successfull", new_asset.asset_name)
+
+            assets_to_build -= 1
+
+            logger.info("%s assets left to build", assets_to_build)
 
         assets_to_build += 1
 

@@ -17,7 +17,7 @@ class Asset(object):
         self.asset_data = asset_data
         self.asset_name = self.asset_data["asset_name"]
         self.asset_type = self.asset_data["asset_type"]
-        self.asset_root_path = os.path.join(lm.LIBRARIES[self.asset_type], self.asset_name[0], self.asset_name)
+        self.asset_root_path = os.path.join(lm.LIBRARIES[self.asset_type], self.asset_name[0].lower(), self.asset_name)
         self.asset_data["asset_path"] = self.asset_root_path
         self.asset_data_json = os.path.join(self.asset_root_path, "asset_data.json")
         self.preview_path = os.path.join(self.asset_root_path, "{}_preview.png".format(self.asset_name))
@@ -117,10 +117,9 @@ class Asset(object):
     def publish_mesh(self, mesh):
         src = mesh.replace("/", "\\")
 
-        filename = src.split("\\")[-1]
-        file_ext = filename.split(".")[-1]
+        file_ext = src.split(".")[-1]
 
-        dst = os.path.join(self.asset_root_path, "02_model", "publish", "{}.{}".format(filename, file_ext))
+        dst = os.path.join(self.asset_root_path, "02_model", "publish", "{}.{}".format(self.asset_name, file_ext))
 
         copyfile(src, dst)
 
@@ -141,3 +140,5 @@ class Asset(object):
 
         if os.path.isfile(self.preview_path):
             logger.info("Preview published successfully")
+
+            return True
