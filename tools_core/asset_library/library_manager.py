@@ -13,15 +13,15 @@ LIBRARIES_ROOT = r"F:\share\assets\libraries"
 
 LIBRARIES = OrderedDict()
 
-LIBRARIES['Character'] = r"F:\share\assets\libraries\Character"
-LIBRARIES['Prop'] = r"F:\share\assets\libraries\Prop"
-LIBRARIES['Set'] = r"F:\share\assets\libraries\Set"
-LIBRARIES['Transit'] = r"F:\share\assets\libraries\Transit"
-LIBRARIES['Material'] = r"F:\share\assets\libraries\Material"
-LIBRARIES['StudioLights'] = r"F:\share\assets\libraries\StudioLights"
-LIBRARIES['Cucoloris'] = r"F:\share\assets\libraries\Cucoloris"
-LIBRARIES['HDR'] = r"F:\share\assets\libraries\HDR"
-LIBRARIES['Texture'] = r"F:\share\assets\libraries\Texture"
+LIBRARIES['Character'] = r"{}\Character".format(LIBRARIES_ROOT)
+LIBRARIES['Prop'] = r"{}\Prop".format(LIBRARIES_ROOT)
+LIBRARIES['Set'] = r"{}\Set".format(LIBRARIES_ROOT)
+LIBRARIES['Transit'] = r"{}\Transit".format(LIBRARIES_ROOT)
+LIBRARIES['Material'] = r"{}\Material".format(LIBRARIES_ROOT)
+LIBRARIES['StudioLights'] = r"{}\StudioLights".format(LIBRARIES_ROOT)
+LIBRARIES['Cucoloris'] = r"{}\Cucoloris".format(LIBRARIES_ROOT)
+LIBRARIES['HDR'] = r"{}\HDR".format(LIBRARIES_ROOT)
+LIBRARIES['Texture'] = r"{}\Texture".format(LIBRARIES_ROOT)
 
 STD_LIBRARIES = [
     "Character",
@@ -217,12 +217,12 @@ def update_asset_in_library(library, asset, asset_data):
         return False
 
 
-def refresh_all_libraries(update_asset_data=False):
+def refresh_all_libraries():
     for library, library_path in LIBRARIES.items():
         if not os.path.isdir(library_path):
             continue
 
-        create_library_data(library, update_asset_data=update_asset_data)
+        create_library_data(library)
 
 
 def get_library_data(library):
@@ -304,14 +304,14 @@ def write_library_data(library, library_data, override=True):
         return False
 
 
-def write_asset_data(library, asset, asset_data, override=True, update_library_data=True):
+def write_asset_data(library, asset, asset_data, override=True, update_library_data=False):
     new_data = {}
 
     if get_asset_data(library, asset) and not override:
         return False
 
     if library in STD_LIBRARIES:
-        asset_json_path = os.path.join(LIBRARIES[library], asset, "asset_data.json")
+        asset_json_path = os.path.join(LIBRARIES[library], asset[0].lower(), asset, "asset_data.json")
 
         with open(asset_json_path, "w") as f:
             json.dump(asset_data, f, indent=4)
@@ -379,85 +379,74 @@ def update_asset_tags(library, asset, tags, override=True):
 
 def _reformat_asset_datas():
     for library in STD_LIBRARIES:
+        if library != "Material":
+            continue
+
         library_path = LIBRARIES[library]
 
         if not os.path.isdir(library_path):
             continue
 
-        for asset in os.listdir(library_path):
-            asset_path = os.path.join(library_path, asset)
+        for letter in os.listdir(library_path):
+            letter_path = os.path.join(library_path, letter)
 
-            if not os.path.isdir(asset_path):
+            if not os.path.isdir(letter_path):
                 continue
 
-            if "data.json" not in os.listdir(asset_path):
-                continue
+            for asset in os.listdir(letter_path):
+                asset_path = os.path.join(library_path, asset[0].lower(), asset)
 
-            logger.info("Converting %s asset data json", asset)
+                if not os.path.isdir(asset_path):
+                    continue
 
-            old_asset_json_path = os.path.join(asset_path, "data.json")
+                if "asset_data.json" not in os.listdir(asset_path):
+                    continue
 
-            with open(old_asset_json_path) as f:
-                old_asset_data = json.load(f)
+                old_asset_data = json.load(open(os.path.join(asset_path, "asset_data.json")))
 
-            asset_data = {
-                "asset_name": "",
-                "asset_preview": "",
-                "vrmesh": "",
-                "vrproxy_maya": "",
-                "vrscene": "",
-                "vrscene_maya": "",
-                "maya_file": "",
-                "mesh": "",
-                "scale": 1.0,
-                "material_data": {},
-                "megascan_id": "",
-                "tags": [],
-                "library": library
-            }
+                logger.info("Converting %s asset data json", asset)
 
-            # Copy existing data
-            for key in asset_data.keys():
-                if key in old_asset_data.keys() and key != "tags":
-                    asset_data[key] = old_asset_data[key]
+                asset_data = {
+                    "asset_name": "",
+                    "asset_preview": "",
+                    "asset_type": library,
+                    "asset_path": asset_path,
+                    "usd": "",
+                    "vrmesh": "",
+                    "vrproxy_maya": "",
+                    "vrscene": "",
+                    "vrscene_maya": "",
+                    "maya_file": "",
+                    "mesh": "",
+                    "scale": 0,
+                    "material_data": "",
+                    "megascan_id": "",
+                    "tags": []
+                }
 
-                if "tags" in old_asset_data.keys():
-                    tags = []
-                    old_tags = old_asset_data["tags"]
+                # Copy existing data
+                for key in asset_data.keys():
+                    if key in old_asset_data.keys() and key != "tags":
+                        asset_data[key] = old_asset_data[key]
 
-                    if "," in old_tags:
-                        tags = [t.replace(" ", "") for t in old_asset_data['tags'].split(",")]
-                    elif old_tags and "," not in old_tags:
-                        tags = [old_tags]
+                    if "tags" in old_asset_data.keys() and isinstance(old_asset_data["tags"], str):
+                        tags = []
+                        old_tags = old_asset_data["tags"]
 
-                    asset_data["tags"] = sorted(list(set(tags)))
+                        if "," in old_tags:
+                            tags = [t.replace(" ", "") for t in old_asset_data['tags'].split(",")]
+                        elif old_tags and "," not in old_tags:
+                            tags = [old_tags]
 
-            # Set new data
+                        asset_data["tags"] = sorted(list(set(tags)))
 
-            # Maya file
-            if "import_file" in old_asset_data.keys() and old_asset_data["import_file"].endswith(".ma"):
-                asset_data["maya_file"] = old_asset_data["import_file"]
+                asset_data["asset_type"] = library
+                if asset_data["asset_preview"]:
+                    asset_data["asset_preview"] = os.path.join(asset_path, "{}_preview.png".format(asset))
 
-            # VRay Data
-            if "vrayproxy" in os.listdir(asset_path):
-                vrayproxy_dir = os.path.join(asset_path, "vrayproxy")
-
-                if os.path.isdir(vrayproxy_dir):
-                    vrmesh_path = os.path.join(vrayproxy_dir, "{}.vrmesh".format(asset))
-
-                    if os.path.isfile(vrmesh_path):
-                        asset_data["vrmesh"] = vrmesh_path
-
-                    vrproxy_path = os.path.join(vrayproxy_dir, "{}_vrayproxy.ma".format(asset))
-
-                    if os.path.isfile(vrproxy_path):
-                        asset_data["vrproxy_maya"] = vrproxy_path
-
-            if write_asset_data(library, asset, asset_data):
-                os.remove(old_asset_json_path)
-
-                if not os.path.isfile(old_asset_json_path):
-                    logger.info("Removed %s old asset data", asset)
+                # Set new data
+                with open(os.path.join(asset_path, "asset_data.json"), "w") as f:
+                    json.dump(sort_asset_data(asset_data), f, indent=4)
 
 
 def _copy_img_tags():
@@ -516,7 +505,7 @@ def _reorder_existing_asset_datas():
 
         for asset, asset_data in library_data["assets"].items():
             new_asset_data = OrderedDict()
-            for key in ASSET_KEY_ORDER:
+            for key in ASSET_DATA_KEY_ORDER:
                 if key in asset_data.keys():
                     new_asset_data[key] = asset_data[key]
 
@@ -538,7 +527,7 @@ def _delete_all_asset_datas():
         library_data = get_library_data(library)
 
         for asset in library_data["assets"].keys():
-            asset_path = os.path.join(LIBRARIES[library], asset)
+            asset_path = os.path.join(LIBRARIES[library], asset[0].lower(), asset)
 
             asset_json_path = os.path.join(asset_path, "asset_data.json")
 
@@ -547,5 +536,4 @@ def _delete_all_asset_datas():
 
 
 if __name__ == '__main__':
-    for library in LIBRARIES.keys():
-        create_library_data(library)
+    refresh_all_libraries()
