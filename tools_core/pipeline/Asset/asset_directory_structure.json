@@ -41,7 +41,12 @@
           "folder_name": "wip"
         },
         {
-          "folder_name": "publish"
+          "folder_name": "publish",
+          "subfolders": [
+            {
+              "folder_name": "materials"
+            }
+          ]
         }
       ]
     },

@@ -6,7 +6,7 @@ from tools_core.asset_library import library_manager as lm
 
 
 def move_to_letter_paths():
-    for library, lb_path in lm.LIBRARIES.items():
+    for library, lb_path in ("Material", r"F:\share\assets\libraries\Material"):
         if not os.path.isdir(lb_path):
             continue
 

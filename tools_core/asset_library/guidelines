@@ -20,6 +20,7 @@ material_data = [
     {
         "material_name": str,
         "material_assignment": str,
+        "material_shader": str,
         "textures": {
             "diffuse": str
         }

@@ -71,6 +71,9 @@ class AssetTreeWidget(QtWidgets.QTreeWidget):
     def create_all_asset_items(self):
         self.blockSignals(True)
 
+        self.clear()
+        self.asset_items = []
+
         for library in lm.LIBRARIES.keys():
             library_data = lm.get_library_data(library)
 
@@ -127,7 +130,7 @@ class AssetTreeWidget(QtWidgets.QTreeWidget):
 
                     if len(filter_tags_set.intersection(asset_tags_set)) > 0:
                         if regex:
-                            if not regex.search(asset_item.asset_data["asset_name"]):
+                            if not regex.search(asset_item.asset_data["asset_name"].lower()):
                                 asset_item.setHidden(True)
                             else:
                                 asset_item.setHidden(False)
@@ -137,7 +140,7 @@ class AssetTreeWidget(QtWidgets.QTreeWidget):
                         asset_item.setHidden(True)
                 elif not tags:
                     if regex:
-                        if not regex.search(asset_item.asset_data["asset_name"]):
+                        if not regex.search(asset_item.asset_data["asset_name"].lower()):
                             asset_item.setHidden(True)
                         else:
                             asset_item.setHidden(False)
@@ -152,13 +155,15 @@ class AssetTreeWidget(QtWidgets.QTreeWidget):
         if not lm.get_library_data(asset_data["asset_type"]):
             return
 
-        lm.update_asset_tags(asset_data["asset_type"], asset_data["asset_name"], item.text(2))
+        lm.update_asset_tags(asset_data["asset_type"], asset_data["asset_name"], str(item.text(2)), override=True)
 
         new_asset_data = lm.get_asset_data(asset_data["asset_type"], asset_data["asset_name"])
 
         item.asset_data = new_asset_data
 
         item.setText(2, ",".join(new_asset_data["tags"]))
+
+        lm.create_library_data(item.library)
 
         self.tags_updated.emit()
 
@@ -201,6 +206,9 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         self.libraries_tw.setHeaderItem(libraries_header_item)
 
         self.libraries_tw.setMaximumWidth(self.dims[0] * .25)
+
+        self.refresh_btn = cw.ImagePushButton(30, 30)
+        self.refresh_btn.set_image(r"F:\share\tools\tools_core\tools_core\pyqt_commons\icons\reload.png")
 
         self.assets_tw = AssetTreeWidget()
         self.assets_tw.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -248,6 +256,7 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
         search_layout.addWidget(self.search_lbl)
         search_layout.addWidget(self.search_le)
+        search_layout.addWidget(self.refresh_btn)
 
         main_layout.addLayout(search_layout)
 
@@ -276,6 +285,8 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         self.search_le.textChanged.connect(self.refresh_assets)
 
         self.assets_tw.tags_updated.connect(self.populate_libraries_tw)
+
+        self.refresh_btn.clicked.connect(self.refresh_all)
 
     def create_custom_connections(self, connections):
         for connection in connections:
@@ -352,7 +363,7 @@ class AssetBrowserWidget(QtWidgets.QWidget):
                 libraries.append(item.library)
 
         if self.search_le.text():
-            regex = re.compile(self.search_le.text())
+            regex = re.compile(self.search_le.text().lower())
 
         self.assets_tw.refresh_assets(libraries, tags, regex)
 
@@ -426,3 +437,8 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
     def log(self, msg, level):
         self.status_le.log(msg, level)
+
+    def refresh_all(self):
+        lm.refresh_all_libraries()
+        self.assets_tw.create_all_asset_items()
+        self.populate_libraries_tw()

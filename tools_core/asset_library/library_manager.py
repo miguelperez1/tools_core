@@ -54,10 +54,10 @@ ASSET_DATA_KEY_ORDER = [
     "asset_preview",
     "asset_type",
     "asset_path",
-    "usd",
-    "maya_file",
-    "material_data",
     "tags",
+    "usd",
+    "materials",
+    "maya_file",
     "vrmesh",
     "vrproxy_maya",
     "vrscene",
@@ -354,11 +354,13 @@ def update_asset_tags(library, asset, tags, override=True):
         if "," in tags:
             new_tags = tags.split(",")
         else:
-            new_tags = [tags]
+            new_tags.append(tags)
     elif isinstance(tags, list):
         new_tags.extend(tags)
 
-    new_tags.extend(current_tags)
+    for tag in current_tags:
+        if tag not in new_tags:
+            new_tags.append(tag)
 
     if " " in new_tags:
         new_tags.remove(" ")
@@ -368,7 +370,7 @@ def update_asset_tags(library, asset, tags, override=True):
 
     asset_data["tags"] = sorted(list(set(new_tags)))
 
-    if write_asset_data(library, asset, asset_data):
+    if write_asset_data(library, asset, asset_data, update_library_data=True):
         logger.info("Updated %s tags", asset_data["asset_name"])
         return True
     else:
