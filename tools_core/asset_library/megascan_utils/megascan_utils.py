@@ -162,20 +162,20 @@ def build_megascan_models(new=1):
 
     for dir in os.listdir(megascans_library):
         asset_data = {
-            "asset_name": "",
-            "asset_preview": "",
+            "asset_name": None,
+            "asset_preview": None,
             "asset_type": "Prop",
-            "asset_path": "",
-            "usd": "",
-            "vrmesh": "",
-            "vrproxy_maya": "",
-            "vrscene": "",
-            "vrscene_maya": "",
-            "maya_file": "",
-            "mesh": "",
-            "scale": "",
-            "materials": [],
-            "megascan_id": "",
+            "asset_path": None,
+            "usd": None,
+            "vrmesh": None,
+            "vrproxy_maya": None,
+            "vrscene": None,
+            "vrscene_maya": None,
+            "maya_file": None,
+            "mesh": None,
+            "scale": None,
+            "materials": None,
+            "megascan_id": None,
             "tags": ["megascans"]
         }
 
@@ -190,10 +190,11 @@ def build_megascan_models(new=1):
                     megascan_data = json.load(json_file)
                     json_file.close()
                 except Exception:
+                    logger.error("Error reading json file")
                     continue
 
         if megascan_data is None:
-            # logger.warning("Could not find megascan data for %s, skipping".format(dir))
+            logger.warning("Could not find megascan data for %s, skipping".format(dir))
             continue
 
         # Get asset id
@@ -208,6 +209,7 @@ def build_megascan_models(new=1):
         asset_name = asset_name.replace("__", "_")
 
         if megascan_asset_exists(asset_id, "Prop"):
+            logger.warning("%s already exists, skipping", asset_name)
             # print("{} exists, skipping".format(asset_name))
             continue
 
@@ -230,6 +232,7 @@ def build_megascan_models(new=1):
         material_data = get_megascan_material(os.path.join(megascans_library, dir), an, asset_id)
 
         if not material_data:
+            logger.warning("Could not find material data, skipping")
             continue
 
         asset_data['materials'] = [material_data]
@@ -239,8 +242,10 @@ def build_megascan_models(new=1):
         if os.path.isfile(mesh_file):
             asset_data["mesh"] = mesh_file
             # print("Found mesh file: " + mesh_file)
+        elif os.path.isfile(mesh_file.replace(".obj", ".fbx")):
+            asset_data["mesh"] = mesh_file.replace(".obj", ".fbx")
         else:
-            # print("Could not find mesh file for {}, skipping".format(dir))
+            logger.error("Could not find mesh file skipping")
             continue
 
         # Get scale
@@ -336,4 +341,5 @@ def delete_existing_megascans():
 
 
 if __name__ == '__main__':
+    # lm.refresh_all_libraries()
     build_megascan_models()
