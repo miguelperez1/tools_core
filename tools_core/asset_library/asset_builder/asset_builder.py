@@ -13,8 +13,8 @@ class AssetBuilder(object):
 
         self.build_maya_file = build_maya
 
-        if self.asset_data["asset_library"] in lm.STD_LIBRARIES:
-            self.asset_root = os.path.join(lm.LIBRARIES[self.asset_data["asset_library"]],
+        if self.asset_data["asset_type"] in lm.STD_LIBRARIES:
+            self.asset_root = os.path.join(lm.LIBRARIES[self.asset_data["asset_type"]],
                                            self.asset_data["asset_name"])
 
         self.json_path = os.path.join(self.asset_root, "asset_data.json")
@@ -63,7 +63,7 @@ class AssetBuilder(object):
             preview_name = "{0}_preview.png".format(self.name)
             dst_preview = os.path.join(self.asset_root, preview_name)
 
-            self.publish_data['asset_preview'] = dst_preview
+            self.asset_data['asset_preview'] = dst_preview
 
             copyfile(src_preview, dst_preview)
 
@@ -73,7 +73,7 @@ class AssetBuilder(object):
             dst_mesh = os.path.join(self.asset_root, "mesh", src_mesh.split("\\")[-1])
             copyfile(src_mesh, dst_mesh)
 
-            self.publish_data['mesh'] = dst_mesh
+            self.asset_data['mesh'] = dst_mesh
 
     def _build_maya(self):
         function = r'F:\share\tools\tools_core\python\maya_core\asset_manager\asset_builder\maya_builder.py'

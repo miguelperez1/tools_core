@@ -343,3 +343,4 @@ def delete_existing_megascans():
 if __name__ == '__main__':
     # lm.refresh_all_libraries()
     build_megascan_models()
+    build_megascan_materials()

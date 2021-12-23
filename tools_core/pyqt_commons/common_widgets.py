@@ -183,41 +183,41 @@ class PreviewLabel(QtWidgets.QLabel):
         self.setPixmap(QtGui.QPixmap(r'F:\share\tools\core\asset_browser\icons\default.png').scaledToWidth(100,
                                                                                                            QtCore.Qt.SmoothTransformation))
 
-
-class DoubleSlider(QtWidgets.QSlider):
-    log_event = QtCore.Signal(str, str)
-    clicked_event = QtCore.Signal(QtWidgets.QTreeWidgetItem)
-    doubleValueChanged = QtCore.Signal(float)
-
-    def __init__(self, decimals=3, *args, **kwargs):
-        super(DoubleSlider, self).__init__(*args, **kwargs)
-
-        self.decimals = decimals
-        self.multiplier = 10 ** self.decimals
-
-        self.valueChanged.connect(self.emitDoubleValueChanged)
-
-    def emitDoubleValueChanged(self):
-        value = float(super(DoubleSlider, self).value()) / self.multiplier
-        self.doubleValueChanged.emit(value)
-
-    def value(self):
-        return float(super(DoubleSlider, self).value()) / self.multiplier
-
-    def setMinimum(self, value):
-        return super(DoubleSlider, self).setMinimum(value * self.multiplier)
-
-    def setMaximum(self, value):
-        return super(DoubleSlider, self).setMaximum(value * self.multiplier)
-
-    def setSingleStep(self, value):
-        return super(DoubleSlider, self).setSingleStep(value * self.multiplier)
-
-    def singleStep(self):
-        return float(super(DoubleSlider, self).singleStep()) / self.multiplier
-
-    def setValue(self, value):
-        super(DoubleSlider, self).setValue(int(value * self.multiplier))
+#
+# class DoubleSlider(QtWidgets.QSlider):
+#     log_event = QtCore.Signal(str, str)
+#     clicked_event = QtCore.Signal(QtWidgets.QTreeWidgetItem)
+#     doubleValueChanged = QtCore.Signal(float)
+#
+#     def __init__(self, decimals=3, *args, **kwargs):
+#         super(DoubleSlider, self).__init__(*args, **kwargs)
+#
+#         self.decimals = decimals
+#         self.multiplier = 10 ** self.decimals
+#
+#         self.valueChanged.connect(self.emitDoubleValueChanged)
+#
+#     def emitDoubleValueChanged(self):
+#         value = float(super(DoubleSlider, self).value()) / self.multiplier
+#         self.doubleValueChanged.emit(value)
+#
+#     def value(self):
+#         return float(super(DoubleSlider, self).value()) / self.multiplier
+#
+#     def setMinimum(self, value):
+#         return super(DoubleSlider, self).setMinimum(value * self.multiplier)
+#
+#     def setMaximum(self, value):
+#         return super(DoubleSlider, self).setMaximum(value * self.multiplier)
+#
+#     def setSingleStep(self, value):
+#         return super(DoubleSlider, self).setSingleStep(value * self.multiplier)
+#
+#     def singleStep(self):
+#         return float(super(DoubleSlider, self).singleStep()) / self.multiplier
+#
+#     def setValue(self, value):
+#         super(DoubleSlider, self).setValue(int(value * self.multiplier))
 
 
 class MTreeWidget(QtWidgets.QTreeWidget):
@@ -237,7 +237,7 @@ class VSpacerWidget(QtWidgets.QWidget):
 
 
 class LabeledIntSlider(QtWidgets.QWidget):
-    value_changed = QtCore.Signal(int)
+    # value_changed = QtCore.Signal(int)
 
     def __init__(self, label, min_range, max_range, value):
         super(LabeledIntSlider, self).__init__()
