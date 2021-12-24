@@ -4,6 +4,7 @@ import json
 import shutil
 import string
 import logging
+import subprocess
 from collections import OrderedDict
 
 from tools_core.asset_library import library_manager as lm
@@ -121,6 +122,12 @@ def build_megascan_materials():
 
         try:
             new_asset.create_asset()
+        except Exception:
+            logger.error("Error building %s", asset_name)
+            continue
+
+        try:
+            build_maya(new_asset)
         except Exception:
             logger.error("Error building %s", asset_name)
             continue
@@ -261,14 +268,18 @@ def build_megascan_models(new=1):
         elif os.path.isfile(preview_file.replace(".png", ".jpg")):
             asset_data['asset_preview'] = preview_file.replace(".png", ".jpg")
 
-        print(lm.sort_asset_data(asset_data))
-
         new_asset = PropAsset.PropAsset(asset_data)
 
         try:
             new_asset.create_asset()
         except Exception:
             logger.error("Error building %s", asset_name)
+            continue
+
+        try:
+            build_maya(new_asset)
+        except Exception:
+            logger.error("Error building maya %s", asset_name)
             continue
 
         # Check if asset build was successful
@@ -340,7 +351,22 @@ def delete_existing_megascans():
                     shutil.rmtree(os.path.join(m_path, dir))
 
 
+def build_maya(asset):
+    # Python script path
+    function = r"F:\share\tools\maya_core\maya_core\asset_library\megascan_builder\megascan_builder.py"
+
+    # Pass asset data as argument
+    arg = '{}'.format(asset.asset_data_json)
+
+    # Log build path
+    log_path = os.path.join(asset.asset_root_path, "00_data", "logs", "build_log.txt")
+    f = open(log_path, "w")
+
+    logger.debug("running mayapy process for %s", asset.asset_name)
+
+    subprocess.call(['mayapy', function, arg], stdout=f, stderr=subprocess.STDOUT)
+
+
 if __name__ == '__main__':
-    # lm.refresh_all_libraries()
+    lm.refresh_all_libraries()
     build_megascan_models()
-    build_megascan_materials()
