@@ -12,4 +12,4 @@ class MaterialAsset(Asset.Asset):
         super(MaterialAsset, self).__init__(asset_data)
 
     def create_asset(self):
-        self._create_asset()
+        self.create_asset()

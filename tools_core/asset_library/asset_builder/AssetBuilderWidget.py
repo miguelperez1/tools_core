@@ -144,7 +144,7 @@ class AssetBuilderWidget(QtWidgets.QWidget):
 
         asset = Asset.Asset(asset_data)
 
-        asset._create_asset()
+        asset.create_asset()
 
         self.asset_name_check()
 

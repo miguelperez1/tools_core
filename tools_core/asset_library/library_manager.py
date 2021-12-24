@@ -317,7 +317,7 @@ def write_asset_data(library, asset, asset_data, override=True, update_library_d
         asset_json_path = os.path.join(LIBRARIES[library], asset[0].lower(), asset, "asset_data.json")
 
         with open(asset_json_path, "w") as f:
-            json.dump(asset_data, f, indent=4)
+            json.dump(sort_asset_data(asset_data), f, indent=4)
 
         new_data = json.load(open(asset_json_path))
 

@@ -22,8 +22,9 @@ class Asset(object):
         self.asset_data_json = os.path.join(self.asset_root_path, "asset_data.json")
         self.preview_path = os.path.join(self.asset_root_path, "{}_preview.png".format(self.asset_name))
         self.build_maya = build_maya
+        self.world_node_path = os.path.join(self.asset_root_path, "01_build", "world_node", self.asset_name + ".ma")
 
-    def _create_asset(self):
+    def create_asset(self):
         # create letter directory if it doesn't exist
         letter_path = os.path.join(lm.LIBRARIES[self.asset_type], self.asset_name[0].lower())
 
@@ -45,10 +46,11 @@ class Asset(object):
         if self.asset_data["materials"]:
             self._copy_images()
 
-        if not self.asset_data["asset_preview"].startswith(self.asset_root_path) and os.path.isfile(
-                self.asset_data["asset_preview"]):
-            if self.publish_preview(self.asset_data["asset_preview"]):
-                self.asset_data["asset_preview"] = self.preview_path
+        if self.asset_data["asset_preview"]:
+            if not self.asset_data["asset_preview"].startswith(self.asset_root_path) and os.path.isfile(
+                    self.asset_data["asset_preview"]):
+                if self.publish_preview(self.asset_data["asset_preview"]):
+                    self.asset_data["asset_preview"] = self.preview_path
 
         if self.asset_data["mesh"] and not self.asset_data["mesh"].startswith(self.asset_root_path) and os.path.isfile(
                 self.asset_data["mesh"]):
@@ -57,7 +59,7 @@ class Asset(object):
         self._create_asset_json()
 
         if self.build_maya:
-            self._build_maya()
+            self._build_maya_world_node()
 
         lm.create_library_data(self.asset_type)
 
@@ -110,9 +112,20 @@ class Asset(object):
         if os.path.isfile(self.asset_data_json):
             logger.debug("Created %s asset data json", self.asset_name)
 
-    def _build_maya(self):
-        # send asset to mayapy script
-        pass
+    def _build_maya_world_node(self):
+        # Python script path
+        function = r"F:\share\tools\maya_core\maya_core\pipeline\MayaAsset\create_world_node.py"
+
+        # Pass asset data as argument
+        arg = '{}'.format(self.asset_data_json)
+
+        # Log build path
+        log_path = os.path.join(self.asset_root_path, "00_data", "logs", "build_log.txt")
+        f = open(log_path, "w")
+
+        logger.debug("running mayapy process for %s", self.asset_name)
+
+        subprocess.call(['mayapy', function, arg], stdout=f, stderr=subprocess.STDOUT)
 
     def publish_mesh(self, mesh):
         src = mesh.replace("/", "\\")
