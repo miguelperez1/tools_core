@@ -223,6 +223,9 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         self.asset_counter_le.setReadOnly(True)
         self.asset_counter_le.setMaximumWidth(self.dims[0] * .0325)
         self.asset_counter_le.setAlignment(QtCore.Qt.AlignRight)
+        item_font = QtGui.QFont()
+        item_font.setPointSize(8)
+        self.asset_counter_le.setFont(item_font)
 
         self.status_le = LogLE()
 

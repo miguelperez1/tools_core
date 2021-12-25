@@ -61,7 +61,7 @@ class Asset(object):
         if self.build_maya:
             self._build_maya_world_node()
 
-        lm.create_library_data(self.asset_type)
+        # lm.create_library_data(self.asset_type)
 
     def _copy_images(self):
         materials = self.asset_data["materials"]
