@@ -108,5 +108,27 @@ def delete_data_json():
                 os.remove(data_json)
 
 
+def fix_previews():
+    for letter in os.listdir(lm.LIBRARIES["Material"]):
+        letter_path = os.path.join(lm.LIBRARIES["Material"], letter)
+
+        if os.path.isfile(letter_path):
+            continue
+
+        for asset in os.listdir(letter_path):
+            preview_path = os.path.join(letter_path, asset, asset + "_preview.png")
+
+            if os.path.isfile(preview_path):
+                print("writing data")
+                asset_data = lm.get_asset_data("Material", asset)
+
+                asset_data["asset_preview"] = preview_path
+
+                lm.write_asset_data("Material", asset, asset_data=asset_data)
+
+
+
 if __name__ == '__main__':
+    fix_previews()
     lm.refresh_all_libraries()
+
