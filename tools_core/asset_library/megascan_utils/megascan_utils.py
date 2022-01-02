@@ -9,7 +9,7 @@ from collections import OrderedDict
 
 from tools_core.asset_library import library_manager as lm
 from tools_core.pipeline.Asset import MaterialAsset
-from tools_core.pipeline.Asset import PropAsset
+from tools_core.pipeline.Asset import Asset
 
 logging.basicConfig()
 
@@ -152,7 +152,7 @@ def megascan_asset_exists(asset_id, library):
     return False
 
 
-def build_megascan_models(new=1):
+def build_megascan_models():
     megascans_library = r"F:\share\assets\quixel\Downloaded\3d"
 
     current_assets = lm.get_library_data('Prop')
@@ -160,12 +160,12 @@ def build_megascan_models(new=1):
     assets.extend(current_assets['assets'].keys())
 
     assets_to_build = 0
-    # for dir in os.listdir(megascans_library):
-    #     for subdir in os.listdir(os.path.join(megascans_library, dir)):
-    #         if subdir.endswith(".json"):
-    #             assets_to_build += 1
+    for dir in os.listdir(megascans_library):
+        for subdir in os.listdir(os.path.join(megascans_library, dir)):
+            if subdir.endswith(".json"):
+                assets_to_build += 1
 
-    # print("Assets to build: {}".format(assets_to_build))
+    print("Assets to build: {}".format(assets_to_build))
 
     for dir in os.listdir(megascans_library):
         asset_data = {
@@ -268,18 +268,20 @@ def build_megascan_models(new=1):
         elif os.path.isfile(preview_file.replace(".png", ".jpg")):
             asset_data['asset_preview'] = preview_file.replace(".png", ".jpg")
 
-        new_asset = PropAsset.PropAsset(asset_data)
+        new_asset = Asset.Asset(asset_data)
 
         try:
             new_asset.create_asset()
-        except Exception:
+        except Exception as e:
             logger.error("Error building %s", asset_name)
+            raise e
             continue
 
         try:
             build_maya(new_asset)
-        except Exception:
+        except Exception as e:
             logger.error("Error building maya %s", asset_name)
+            raise e
             continue
 
         # Check if asset build was successful
@@ -333,22 +335,12 @@ def get_megascan_material(root_path, asset_name, asset_id):
 
 
 def delete_existing_megascans():
-    paths = [
-        r"F:\share\assets\libraries\model",
-        r"F:\share\assets\libraries\material"
-    ]
+    for asset in lm.get_assets("Prop"):
+        asset_data = lm.get_asset_data("Prop", asset)
 
-    for m_path in paths:
-        for dir in os.listdir(m_path):
-            data_file = os.path.join(m_path, dir, "data.json")
-            if os.path.isfile(data_file):
-                json_file = open(data_file, "r")
-                asset_data = json.load(json_file)
-                json_file.close()
-
-                if "megascans" in asset_data["tags"]:
-                    print("Deleting {}".format(os.path.join(m_path, dir)))
-                    shutil.rmtree(os.path.join(m_path, dir))
+        if "megascans" in asset_data["tags"]:
+            logger.debug("Removing %s", asset)
+            shutil.rmtree(asset_data["asset_path"])
 
 
 def build_maya(asset):
@@ -368,5 +360,6 @@ def build_maya(asset):
 
 
 if __name__ == '__main__':
+    delete_existing_megascans()
     lm.refresh_all_libraries()
     build_megascan_models()

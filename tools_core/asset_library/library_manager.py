@@ -380,6 +380,22 @@ def update_asset_tags(library, asset, tags, override=True):
         return False
 
 
+def get_assets(library):
+    assets = []
+
+    for letter in os.listdir(LIBRARIES[library]):
+        letter_path = os.path.join(LIBRARIES[library], letter)
+
+        if os.path.isfile(letter_path):
+            continue
+
+        for asset in os.listdir(letter_path):
+            if asset not in assets:
+                assets.append(asset)
+
+    return assets
+
+
 # HELPER TRANSITION FUNCTIONS
 
 def _reformat_asset_datas():

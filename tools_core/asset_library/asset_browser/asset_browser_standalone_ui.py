@@ -2,6 +2,7 @@ import os
 import sys
 import ctypes
 import logging
+import socket
 import subprocess
 from functools import partial
 
@@ -16,6 +17,13 @@ from tools_core.pyqt_commons import common_widgets as cw
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
+
+BUFFER_SIZE = 4096
+PORT = 20221
+maya_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+maya_socket.connect(("localhost", PORT))
+
+IMPORT_MAYA_ABC_MODULE = "from maya_core.asset_library.asset_browser import asset_browser_commands_standalone as abc"
 
 
 class AssetBrowser(QtWidgets.QWidget):
@@ -51,6 +59,8 @@ class AssetBrowser(QtWidgets.QWidget):
 
         # Actions
         open_with_maya_action = QtWidgets.QAction("Open with Maya")
+        send_to_maya_models_action = QtWidgets.QAction("Send to Maya")
+        send_to_maya_lights_action = QtWidgets.QAction("Send to Maya")
 
         send_to_nuke_action = QtWidgets.QAction("Send to Nuke")
 
@@ -65,11 +75,29 @@ class AssetBrowser(QtWidgets.QWidget):
                     "action_object": open_with_maya_action,
                     "action_callback": partial(self.open_with_maya_action_callback),
                     "action_asset_data_conditions": ["maya_file"]
+                },
+                {
+                    "action_object": send_to_maya_models_action,
+                    "action_callback": partial(self.send_to_maya_models_action_callback),
+                    "action_asset_data_conditions": ["maya_file"]
                 }
             ]
 
             self.custom_actions[std_library].extend(action_datas)
 
+        # Light Libraries
+
+        for light_library in ["StudioLights", "Cucoloris", "HDR"]:
+            action_datas = [
+                {
+                    "action_object": send_to_maya_lights_action,
+                    "action_callback": partial(self.send_to_maya_lights_action_callback)
+                }
+            ]
+
+            self.custom_actions[light_library].extend(action_datas)
+
+        # Image Libraries
         for img_library in lm.IMG_LIBRARIES:
             if img_library not in self.custom_actions.keys():
                 continue
@@ -87,6 +115,9 @@ class AssetBrowser(QtWidgets.QWidget):
 
     def create_widgets(self):
         self.asset_browser = AssetBrowserWidget.AssetBrowserWidget()
+
+    def log(self, msg, level):
+        self.asset_browser.log(msg, level)
 
     def create_layout(self):
         main_layout = QtWidgets.QVBoxLayout(self)
@@ -113,6 +144,41 @@ class AssetBrowser(QtWidgets.QWidget):
 
         for item in items:
             subprocess.Popen(["maya", item.asset_data["maya_file"]])
+
+    def send_to_maya_models_action_callback(self):
+        items = self.asset_browser.assets_tw.selectedItems()
+
+        if not items:
+            return
+
+        for item in items:
+            command = "{}\nabc.import_model_asset(r'{}')".format(IMPORT_MAYA_ABC_MODULE, item.asset_data["maya_file"])
+
+            maya_socket.sendall(command.encode())
+
+            data = maya_socket.recv(BUFFER_SIZE)
+            # self.log(str(data.decode()), "info")
+
+    def send_to_maya_lights_action_callback(self):
+        items = self.asset_browser.assets_tw.selectedItems()
+
+        if not items:
+            return
+
+        for item in items:
+            command = ""
+
+            if item.asset_data["asset_type"] == "HDR":
+                command = "{}\nabc.import_hdr_asset(r'{}')".format(IMPORT_MAYA_ABC_MODULE, item.asset_data["asset_path"])
+            elif item.asset_data["asset_type"] == "StudioLights":
+                command = "{}\nabc.import_studiolights_asset(r'{}')".format(IMPORT_MAYA_ABC_MODULE,
+                                                                            item.asset_data["asset_path"])
+            elif item.asset_data["asset_type"] == "Cucoloris":
+                command = "{}\nabc.import_cucoloris_asset(r'{}')".format(IMPORT_MAYA_ABC_MODULE,
+                                                                         item.asset_data["asset_path"])
+
+            if command:
+                maya_socket.sendall(command.encode())
 
     def send_to_nuke_action_callback(self):
         print("send_to_nuke_action_callback")
