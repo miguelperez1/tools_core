@@ -186,6 +186,8 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         self.open_asset_explorer_action = QtWidgets.QAction("Open in Explorer")
         self.copy_root_path_action = QtWidgets.QAction("Copy root path")
 
+        self.add_tags_action = QtWidgets.QAction("Add Tags")
+
         self.library_menu_actions = {}
 
         for library in lm.LIBRARIES.keys():
@@ -193,7 +195,8 @@ class AssetBrowserWidget(QtWidgets.QWidget):
 
         self.library_menu_actions["all"] = [
             self.open_asset_explorer_action,
-            self.copy_root_path_action
+            self.copy_root_path_action,
+            self.add_tags_action
         ]
 
         self.open_library_explorer_action = QtWidgets.QAction("Open in Explorer")

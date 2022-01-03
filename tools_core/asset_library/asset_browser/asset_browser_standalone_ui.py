@@ -61,6 +61,8 @@ class AssetBrowser(QtWidgets.QWidget):
         open_with_maya_action = QtWidgets.QAction("Open with Maya")
         send_to_maya_models_action = QtWidgets.QAction("Send to Maya")
         send_to_maya_lights_action = QtWidgets.QAction("Send to Maya")
+        send_to_maya_material_action = QtWidgets.QAction("Send to Maya")
+        send_to_maya_assign_material_action = QtWidgets.QAction("Send to Maya and assign")
 
         send_to_nuke_action = QtWidgets.QAction("Send to Nuke")
 
@@ -84,6 +86,20 @@ class AssetBrowser(QtWidgets.QWidget):
             ]
 
             self.custom_actions[std_library].extend(action_datas)
+
+        # Material Library
+        material_actions = [
+            {
+                "action_object": send_to_maya_material_action,
+                "action_callback": partial(self.send_to_maya_material_action_callback)
+            },
+            {
+                "action_object": send_to_maya_assign_material_action,
+                "action_callback": partial(self.send_to_maya_assign_material_action_callback)
+            }
+        ]
+
+        self.custom_actions["Material"].extend(material_actions)
 
         # Light Libraries
 
@@ -179,6 +195,28 @@ class AssetBrowser(QtWidgets.QWidget):
 
             if command:
                 maya_socket.sendall(command.encode())
+
+    def send_to_maya_material_action_callback(self):
+        items = self.asset_browser.assets_tw.selectedItems()
+
+        if not items:
+            return
+
+        for item in items:
+            command = "{}\nabc.import_material_asset(r'{}')".format(IMPORT_MAYA_ABC_MODULE, item.asset_data["asset_name"])
+
+            maya_socket.sendall(command.encode())
+
+    def send_to_maya_assign_material_action_callback(self):
+        items = self.asset_browser.assets_tw.selectedItems()
+
+        if not items:
+            return
+
+        for item in items:
+            command = "{}\nabc.import_assign_material_asset(r'{}')".format(IMPORT_MAYA_ABC_MODULE, item.asset_data["asset_name"])
+
+            maya_socket.sendall(command.encode())
 
     def send_to_nuke_action_callback(self):
         print("send_to_nuke_action_callback")
