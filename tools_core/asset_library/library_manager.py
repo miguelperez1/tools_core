@@ -199,6 +199,7 @@ def create_library_data(library, override=True):
     if override:
         library_json = os.path.join(library_root, "library_data.json")
         if os.path.isfile(library_json):
+            logger.debug("Removing old library data")
             os.remove(library_json)
 
     # Write library data
@@ -209,6 +210,10 @@ def update_asset_in_library(library, asset, asset_data):
     library_data = get_library_data(library)
 
     library_data["assets"][asset] = sort_asset_data(asset_data)
+
+    for tag in asset_data["tags"]:
+        if tag not in library_data["tags"]:
+            library_data["tags"].append(tag)
 
     write_library_data(library, library_data)
 
@@ -351,7 +356,7 @@ def update_asset_tags(library, asset, tags, override=True):
     else:
         current_tags = []
 
-    new_tags = []
+    new_tags = current_tags
 
     if isinstance(tags, str):
         if "," in tags:

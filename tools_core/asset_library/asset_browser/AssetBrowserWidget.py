@@ -289,6 +289,7 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         # Actions
         self.open_asset_explorer_action.triggered.connect(self.open_explorer_action_callback)
         self.open_library_explorer_action.triggered.connect(self.open_library_explorer_action_callback)
+        self.add_tags_action.triggered.connect(self.add_tags_action_callback)
 
         # Menus
         self.assets_tw.customContextMenuRequested.connect(self.show_assets_tw_context_menu)
@@ -470,3 +471,30 @@ class AssetBrowserWidget(QtWidgets.QWidget):
         lm.refresh_all_libraries()
         self.assets_tw.create_all_asset_items()
         self.populate_libraries_tw()
+
+    def add_tags_action_callback(self):
+        text, ok = QtWidgets.QInputDialog.getText(self, "Add Tags", "Tags:")
+
+        if ok and text:
+            tags = []
+
+            if "," in text:
+                tags = text.split(",")
+            else:
+                tags.append(text)
+
+            for item in self.assets_tw.selectedItems():
+                asset_data = item.asset_data
+
+                lm.update_asset_tags(asset_data["asset_type"], asset_data["asset_name"], tags,
+                                     override=False)
+
+                new_asset_data = lm.get_asset_data(asset_data["asset_type"], asset_data["asset_name"])
+
+                item.asset_data = new_asset_data
+
+                item.setText(2, ",".join(new_asset_data["tags"]))
+
+                lm.create_library_data(item.library)
+
+            self.populate_libraries_tw()
