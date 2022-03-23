@@ -68,7 +68,13 @@ class Asset(object):
         new_mtls = []
 
         for material_data in materials:
-            new_mtl_data = material_data
+            new_mtl_data = {
+                "textures": {
+                    "unknown": []
+                },
+                "material_name": material_data["material_name"],
+                "material_shader": material_data["material_shader"]
+            }
 
             mtl_root_path = os.path.join(self.asset_root_path, "03_lookdev", "publish", "materials",
                                          material_data["material_name"])
@@ -77,6 +83,19 @@ class Asset(object):
                 os.mkdir(mtl_root_path)
 
             for tex_type, tex_path in material_data["textures"].items():
+                if tex_type == "unknown":
+                    for tex in tex_path:
+                        src = tex
+                        dst = os.path.join(mtl_root_path, tex.replace("/", "\\").split("\\")[-1])
+
+                        logger.debug(material_data)
+
+                        copyfile(src, dst)
+
+                        new_mtl_data["textures"]["unknown"].append(dst)
+
+                    continuere
+
                 if tex_path.startswith(mtl_root_path) and os.path.isfile(tex_path):
                     continue
 
@@ -93,6 +112,9 @@ class Asset(object):
             valid_material = True
 
             for tt, tex_path in material["textures"].items():
+                if tt == "unknown":
+                    continue
+
                 if os.path.isfile(tex_path) and valid_material:
                     valid_material = True
                 else:
