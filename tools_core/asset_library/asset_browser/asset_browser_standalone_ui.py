@@ -119,10 +119,10 @@ class AssetBrowser(QtWidgets.QWidget):
                 continue
 
             action_datas = [
-                {
-                    "action_object": send_to_nuke_action,
-                    "action_callback": partial(self.send_to_nuke_action_callback)
-                }
+                # {
+                #     "action_object": send_to_nuke_action,
+                #     "action_callback": partial(self.send_to_nuke_action_callback)
+                # }
             ]
 
             self.custom_actions[img_library].extend(action_datas)
