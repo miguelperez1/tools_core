@@ -360,6 +360,4 @@ def build_maya(asset):
 
 
 if __name__ == '__main__':
-    delete_existing_megascans()
-    lm.refresh_all_libraries()
     build_megascan_models()
