@@ -94,7 +94,7 @@ class Asset(object):
 
                         new_mtl_data["textures"]["unknown"].append(dst)
 
-                    continuere
+                    continue
 
                 if tex_path.startswith(mtl_root_path) and os.path.isfile(tex_path):
                     continue
