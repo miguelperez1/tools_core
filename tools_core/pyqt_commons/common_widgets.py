@@ -22,6 +22,30 @@ def get_signals(source):
     return signals
 
 
+class TemplateWidget(QtWidgets.QWidget):
+    def __init__(self, *args, **kwargs):
+        super(TemplateWidget, self).__init__(*args, **kwargs)
+
+        self.setObjectName("TemplateWidget")
+
+        self.create_actions()
+        self.create_widgets()
+        self.create_layout()
+        self.create_connections()
+
+    def create_actions(self):
+        pass
+
+    def create_widgets(self):
+        pass
+
+    def create_layout(self):
+        main_layout = QtWidgets.QVBoxLayout(self)
+
+    def create_connections(self):
+        pass
+
+
 class QHLine(QtWidgets.QFrame):
     def __init__(self):
         super(QHLine, self).__init__()
@@ -182,6 +206,7 @@ class PreviewLabel(QtWidgets.QLabel):
     def set_default(self):
         self.setPixmap(QtGui.QPixmap(r'F:\share\tools\core\asset_browser\icons\default.png').scaledToWidth(100,
                                                                                                            QtCore.Qt.SmoothTransformation))
+
 
 #
 # class DoubleSlider(QtWidgets.QSlider):

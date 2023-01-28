@@ -122,15 +122,15 @@ def build_megascan_materials():
 
         try:
             new_asset.create_asset()
-        except Exception:
+        except Exception as e:
             logger.error("Error building %s", asset_name)
-            continue
+            raise e            
 
         try:
             build_maya(new_asset)
-        except Exception:
+        except Exception as e:
             logger.error("Error building %s", asset_name)
-            continue
+            raise e
 
         # Check if asset build was successful
         if os.path.isfile(new_asset.asset_data_json):
@@ -270,12 +270,12 @@ def build_megascan_models():
 
         new_asset = Asset.Asset(asset_data)
 
-        try:
-            new_asset.create_asset()
-        except Exception as e:
-            logger.error("Error building %s", asset_name)
-            raise e
-            continue
+        # try:
+        new_asset.create_asset()
+        # except Exception as e:
+        #     logger.error("Error building %s", asset_name)
+        #     raise e
+        #     continue
 
         try:
             build_maya(new_asset)
@@ -305,29 +305,31 @@ def get_megascan_material(root_path, asset_name, asset_id):
     }
 
     textures = {}
+    
+    for res in ["4K", "8K"]:
 
-    diffuse_path = os.path.join(root_path, "{}_4K_Albedo.exr".format(asset_id))
-    if os.path.isfile(diffuse_path):
-        textures['diffuse'] = diffuse_path
-
-    specular_path = os.path.join(root_path, "{}_4K_Specular.exr".format(asset_id))
-    if os.path.isfile(specular_path):
-        textures['specular'] = specular_path
-
-    gloss_path = os.path.join(root_path, "{}_4K_Gloss.exr".format(asset_id))
-    if os.path.isfile(gloss_path):
-        textures['gloss'] = gloss_path
-
-    normal_path = os.path.join(root_path, "{}_4K_Normal_LOD0.exr".format(asset_id))
-    if os.path.isfile(normal_path):
-        textures['normal'] = normal_path
-
-    elif os.path.isfile(normal_path.replace("_LOD0", "")):
-        textures['normal'] = normal_path.replace("_LOD0", "")
-
-    displacement_path = os.path.join(root_path, "{}_4K_Displacement.exr".format(asset_id))
-    if os.path.isfile(displacement_path):
-        textures['displacement'] = displacement_path
+        diffuse_path = os.path.join(root_path, "{}_{}_Albedo.exr".format(asset_id, res))
+        if os.path.isfile(diffuse_path):
+            textures['diffuse'] = diffuse_path
+    
+        specular_path = os.path.join(root_path, "{}_{}_Specular.exr".format(asset_id, res))
+        if os.path.isfile(specular_path):
+            textures['specular'] = specular_path
+    
+        gloss_path = os.path.join(root_path, "{}_{}_Gloss.exr".format(asset_id, res))
+        if os.path.isfile(gloss_path):
+            textures['gloss'] = gloss_path
+    
+        normal_path = os.path.join(root_path, "{}_{}_Normal_LOD0.exr".format(asset_id, res))
+        if os.path.isfile(normal_path):
+            textures['normal'] = normal_path
+    
+        elif os.path.isfile(normal_path.replace("_LOD0", "")):
+            textures['normal'] = normal_path.replace("_LOD0", "")
+    
+        displacement_path = os.path.join(root_path, "{}_{}_Displacement.exr".format(asset_id, res))
+        if os.path.isfile(displacement_path):
+            textures['displacement'] = displacement_path
 
     material_data["textures"] = textures
 
@@ -360,4 +362,4 @@ def build_maya(asset):
 
 
 if __name__ == '__main__':
-    build_megascan_models()
+    build_megascan_materials()
