@@ -2,76 +2,66 @@ from PySide2 import QtCore
 from PySide2 import QtWidgets
 from PySide2 import QtGui
 
+from tools_core.lightboard.constants import constants as lb_const
 
-class Node(object):
+import importlib
 
-    def __init__(self, name, parent=None):
-        self._name = name
-        self._children = []
-        self._parent = parent
-
-        if parent is not None:
-            parent.add_child(self)
-
-    def add_child(self, child):
-        self._children.append(child)
-
-    def name(self):
-        return self._name
-
-    def child(self, row):
-        return self._children[row]
-
-    def child_count(self):
-        return len(self._children)
-
-    def parent(self):
-        return self._parent
-
-    def row(self):
-        if self._parent is not None:
-            return self._parent._children.index(self)
-
-    def log(self, tab_level=-1):
-        output = ""
-        tab_level += 1
-
-        for i in range(tab_level):
-            output += "\t"
-
-        output += self._name + "\n"
-
-        for child in self._children:
-            output += child.log(tab_level)
-
-        tab_level -= 1
-
-        return output
-
-    def __repr__(self):
-        return self.log()
+importlib.reload(lb_const)
 
 
-class LightGraphModel(QtCore.QAbstractItemModel):
+class LightboardGraphModel(QtCore.QAbstractItemModel):
 
     def __init__(self, root, parent=None):
-        super(LightGraphModel, self).__init__(parent)
+        super(LightboardGraphModel, self).__init__(parent)
         self.root_node = root
 
     def rowCount(self, parent):
-        pass
+        if not parent.isValid():
+            parent_node = self.root_node
+        else:
+            parent_node = parent.internalPointer()
+
+        return parent_node.child_count()
 
     def columnCount(self, parent):
-        pass
+        return 3
 
     def data(self, index, role):
-        pass
+        if not index.isValid():
+            return None
+
+        node = index.internalPointer()
+
+        if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.EditRole:
+            if index.column() == 0:
+                return node.name()
+            elif index.column() == 1:
+                if node.node_type() in lb_const.LIGHT_TYPES:
+                    return node.m_node.intensity.get()
+            elif index.column() == 2:
+                return node.node_type()
+
+
+        if role == QtCore.Qt.DecorationRole:
+            if index.column() == 0:
+                type_info = node.node_type()
+
+                icons = lb_const.ICONS
+
+                if type_info in icons.keys():
+                    icon_path = lb_const.ICONS[type_info]
+
+                    return QtGui.QIcon(QtGui.QPixmap(icon_path))
 
     def headerData(self, section, orientation, role):
-        pass
+        if role == QtCore.Qt.DisplayRole:
+            if section == 0:
+                return ""
+            elif section == 1:
+                return "Intensity"
 
     def flags(self, index):
-        pass
+        return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
 
     def parent(self, index):
         node = index.internalPointer()
@@ -84,4 +74,14 @@ class LightGraphModel(QtCore.QAbstractItemModel):
         return self.createIndex(parent_node.row(), 0, parent_node)
 
     def index(self, row, column, parent):
-        pass
+        if not parent.isValid():
+            parent_node = self.root_node
+        else:
+            parent_node = parent.internalPointer()
+
+        child_item = parent_node.child(row)
+
+        if child_item:
+            return self.createIndex(row, column, child_item)
+        else:
+            return QtCore.QModelIndex()

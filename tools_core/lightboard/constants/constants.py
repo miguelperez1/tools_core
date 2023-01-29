@@ -17,5 +17,16 @@ LIGHT_CLASS = {
 
 LIGHT_TYPES = []
 
-for k, v in LIGHT_CLASS.items():
-    LIGHT_TYPES.append(v)
+for render_engine, lights in LIGHT_CLASS.items():
+    for light_type in lights:
+        LIGHT_TYPES.append(light_type)
+
+ICONS = {
+    "VRayLightRectShape": "C:\\Program Files\\Chaos Group\\V-Ray\\Maya 2023 for x64\\maya_vray\\icons\\shelf_LightRect_200.png",
+    "VRayLightSphereShape": "C:\\Program Files\\Chaos Group\\V-Ray\\Maya 2023 for x64\\maya_vray\\icons\\shelf_LightSphere_200.png",
+    "VRayLightDomeShape": "C:\\Program Files\\Chaos Group\\V-Ray\\Maya 2023 for x64\\maya_vray\\icons\\shelf_LightDome_200.png",
+    "VRayLightIESShape": "C:\\Program Files\\Chaos Group\\V-Ray\\Maya 2023 for x64\\maya_vray\\icons\\shelf_LightIES_200.png",
+    "directionalLight": ":/directionallight.png",
+    "connection_in": ":/hsUpStreamCon.png",
+    "transform": "F:\\share\\tools\\shelf_icons\\group.png"
+}

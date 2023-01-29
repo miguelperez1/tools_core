@@ -26,10 +26,13 @@ class LightBoardWidget(QtWidgets.QWidget):
         self.create_layout()
         self.create_connections()
 
+        self.setMinimumSize(1500, 500)
+
     def create_actions(self):
         pass
 
     def create_widgets(self):
+        pass
         self.ll_widget = LightListerWidget.LightListerWidget()
 
     def create_layout(self):
