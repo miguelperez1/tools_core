@@ -1,8 +1,9 @@
 from PySide2 import QtCore
-from PySide2 import QtWidgets
 from PySide2 import QtGui
 
 from tools_core.lightboard.constants import constants as lb_const
+
+from tools_core.lightboard.models import Nodes
 
 import importlib
 
@@ -24,7 +25,7 @@ class LightboardGraphModel(QtCore.QAbstractItemModel):
         return parent_node.child_count()
 
     def columnCount(self, parent):
-        return 3
+        return 10
 
     def data(self, index, role):
         if not index.isValid():
@@ -35,12 +36,27 @@ class LightboardGraphModel(QtCore.QAbstractItemModel):
         if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.EditRole:
             if index.column() == 0:
                 return node.name()
-            elif index.column() == 1:
-                if node.node_type() in lb_const.LIGHT_TYPES:
-                    return node.m_node.intensity.get()
             elif index.column() == 2:
+                if node.node_type() in lb_const.LIGHT_CLASS["arnold"]:
+                    return float(node.m_node.exposure.get())
+                elif node.node_type() == "directionalLight":
+                    return float(node.m_node.aiExposure.get())
+                elif node.node_type() in lb_const.LIGHT_CLASS["maya"]:
+                    return float(node.m_node.intensity.get())
+            elif index.column() == 3:
+                if node.node_type() in lb_const.LIGHT_CLASS["vray"]:
+                    return str(["%.2f" % v for v in node.m_node.lightColor.get()])
+                if node.node_type() in lb_const.LIGHT_CLASS["maya"] or node.node_type() in lb_const.LIGHT_CLASS[
+                    "arnold"]:
+                    return str(["%.2f" % v for v in node.m_node.color.get()])
+            elif index.column() == self.columnCount(QtCore.QModelIndex()) - 1:
                 return node.node_type()
 
+        if role == QtCore.Qt.TextAlignmentRole and index.column == 1:
+            return QtCore.Qt.AlignHCenter
+
+        if role == QtCore.Qt.SizeHintRole:
+            return QtCore.QSize(40, 30)
 
         if role == QtCore.Qt.DecorationRole:
             if index.column() == 0:
@@ -53,19 +69,81 @@ class LightboardGraphModel(QtCore.QAbstractItemModel):
 
                     return QtGui.QIcon(QtGui.QPixmap(icon_path))
 
+        if role == QtCore.Qt.CheckStateRole and index.column() == 1:
+            return QtCore.Qt.Checked if node.m_node.visibility.get() else QtCore.Qt.Unchecked
+        if role == QtCore.Qt.CheckStateRole and index.column() == 4:
+            if hasattr(node.m_node, "camera"):
+                return QtCore.Qt.Checked if not bool(node.m_node.camera.get()) else QtCore.Qt.Unchecked
+            if hasattr(node.m_node, "aiCamera"):
+                return QtCore.Qt.Checked if not bool(node.m_node.aiCamera.get()) else QtCore.Qt.Unchecked
+
+    def setData(self, index, value, role=QtCore.Qt.EditRole):
+        if index.isValid():
+            node = index.internalPointer()
+
+            if role == QtCore.Qt.EditRole:
+
+                if index.column() == 0:
+                    node.set_name(value)
+
+                if index.column() == 2 and node.node_type() in lb_const.LIGHT_TYPES:
+                    node.set_intensity(value)
+
+                if index.column() == 3 and node.node_type() in lb_const.LIGHT_TYPES:
+                    node.set_color(value)
+
+                self.dataChanged.emit(index, index)
+
+            if role == QtCore.Qt.CheckStateRole:
+                if index.column() == 1:
+                    node.m_node.visibility.set(bool(value))
+
+                    self.dataChanged.emit(index, index)
+
+                if index.column() == 4:
+                    if hasattr(node.m_node, "camera"):
+                        node.m_node.camera.set(not bool(value))
+
+                        self.dataChanged.emit(index, index)
+
+                    elif hasattr(node.m_node, "aiCamera"):
+                        node.m_node.aiCamera.set(not bool(value))
+
+                        self.dataChanged.emit(index, index)
+
+                return True
+
+        return False
+
     def headerData(self, section, orientation, role):
         if role == QtCore.Qt.DisplayRole:
             if section == 0:
                 return ""
             elif section == 1:
-                return "Intensity"
+                return "Enabled"
+            elif section == 2:
+                return "Exposure"
+            elif section == 3:
+                return "Color:"
+            elif section == 4:
+                return "Invisible"
+            elif section == self.columnCount(QtCore.QModelIndex()) - 1:
+                return "Light Type"
 
     def flags(self, index):
-        return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
-
-    def parent(self, index):
         node = index.internalPointer()
 
+        flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
+
+        if index.column() == 1 or index.column() == 4:
+            flags |= QtCore.Qt.ItemIsUserCheckable
+        else:
+            flags |= QtCore.Qt.ItemIsEditable
+
+        return flags
+
+    def parent(self, index):
+        node = self.get_node(index)
         parent_node = node.parent()
 
         if parent_node == self.root_node:
@@ -85,3 +163,40 @@ class LightboardGraphModel(QtCore.QAbstractItemModel):
             return self.createIndex(row, column, child_item)
         else:
             return QtCore.QModelIndex()
+
+    def get_node(self, index):
+        if index.isValid():
+            node = index.internalPointer()
+
+            if node:
+                return node
+
+        return self.root_node
+
+    def insertRows(self, position, rows, parent=QtCore.QModelIndex()):
+
+        parent_node = self.get_node(parent)
+
+        self.beginInsertRows(parent, position, position + rows - 1)
+
+        for row in range(rows):
+            child_count = parent_node.child_count()
+
+            child_node = Nodes.Node("untitled" + str(child_count))
+            success = parent_node.insert_child(position, child_node)
+
+        self.endInsertRows()
+
+        return success
+
+    def removeRows(self, position, rows, parent=QtCore.QModelIndex()):
+        parent_node = self.get_node(parent)
+
+        self.beginRemoveRows(parent, position, position + rows - 1)
+
+        for row in range(rows):
+            success = parent_node.remove_child(position)
+
+        self.endRemoveRows()
+
+        return success

@@ -12,6 +12,10 @@ LIGHT_CLASS = {
         'pointLight',
         'directionalLight',
         'ambientLight'
+    ],
+    "arnold": [
+        'aiAreaLight',
+        'aiSkyDomeLight'
     ]
 }
 
@@ -27,6 +31,8 @@ ICONS = {
     "VRayLightDomeShape": "C:\\Program Files\\Chaos Group\\V-Ray\\Maya 2023 for x64\\maya_vray\\icons\\shelf_LightDome_200.png",
     "VRayLightIESShape": "C:\\Program Files\\Chaos Group\\V-Ray\\Maya 2023 for x64\\maya_vray\\icons\\shelf_LightIES_200.png",
     "directionalLight": ":/directionallight.png",
+    "aiAreaLight": "C:\\Program Files\\Autodesk\\Arnold\\maya2023\\icons\\out_aiAreaLight_200.png",
+    "aiSkyDomeLight": "C:\\Program Files\\Autodesk\\Arnold\\maya2023\\icons\\out_aiSkyDomeLight_200.png",
     "connection_in": ":/hsUpStreamCon.png",
     "transform": "F:\\share\\tools\\shelf_icons\\group.png"
 }

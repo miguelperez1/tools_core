@@ -7,13 +7,10 @@ from PySide2 import QtWidgets
 from tools_core.lightboard.constants import constants as lb_const
 from tools_core.lightboard.models.LightModel import LightModel
 from tools_core.lightboard.models import Nodes
-from tools_core.lightboard.widgets.common_widgets import common_widgets as cw
 
 importlib.reload(lb_const)
 importlib.reload(LightModel)
 importlib.reload(Nodes)
-
-ICON_SIZE = 33
 
 
 def get_maya_widget(widget_name=None):
@@ -24,13 +21,13 @@ def get_maya_widget(widget_name=None):
         return widgets
 
 
-def lgt_rig_graph_model():
-    lgt_rig = pm.PyNode("lgt_rig|lights")
+def modifiers_graph_model():
+    modifiers_n = pm.PyNode("lgt_rig|modifiers")
 
-    if not lgt_rig:
-        lgt_rig = pm.createNode("transform", name="lgt_rig")
+    if not modifiers_n:
+        modifiers_n = pm.createNode("transform", name="modifiers", parent="lgt_rig")
 
-    root_node = Nodes.TransformNode(lgt_rig)
+    root_node = Nodes.TransformNode(modifiers_n)
 
     all_nodes = [root_node]
 
@@ -88,39 +85,22 @@ class LightListerWidget(QtWidgets.QWidget):
         # self.tv.expandAll()
         self.tv.setColumnHidden(self.light_graph_model.columnCount(QtCore.QModelIndex()) - 1, True)
 
-        self.create_light_btns()
+        self.set_widgets()
 
-    def create_light_btns(self):
-        self.light_btns = []
-
-        for light_type in lb_const.LIGHT_TYPES:
-
-            if light_type in lb_const.ICONS.keys():
-                btn = cw.ImagePushButton(ICON_SIZE, ICON_SIZE)
-
-                btn.set_image(lb_const.ICONS[light_type])
-
-                btn.setToolTip(light_type)
-
-                self.light_btns.append(btn)
+    def set_widgets(self):
+        pass
+        # for i in range(self.tv.model().rowCount(QtCore.QModelIndex())):
+        #     item = self.light_graph_model.index(i, 1, QtCore.QModelIndex())
+        #
+        #     self.tv.setIndexWidget(item, QtWidgets.QCheckBox(""))
+        #
+        #     for sub_row in range(self.light_graph_model.rowCount(item)):
+        #         sub_item = self.light_graph_model.index(sub_row, 1, item)
+        #
+        #         self.tv.setIndexWidget(sub_item, QtWidgets.QCheckBox(""))
 
     def create_layout(self):
-        main_layout = QtWidgets.QVBoxLayout(self)
-
-        create_lights_layout = QtWidgets.QHBoxLayout()
-
-        for btn in self.light_btns:
-            create_lights_layout.addWidget(btn)
-
-        create_lights_layout.addStretch()
-
-        move_to_camera_btn = cw.ImagePushButton(ICON_SIZE, ICON_SIZE)
-        move_to_camera_btn.set_image("F:/share/tools/shelf_icons/move_toi.png")
-        move_to_camera_btn.setToolTip("Match to Camera")
-
-        create_lights_layout.addWidget(move_to_camera_btn)
-
-        main_layout.addLayout(create_lights_layout)
+        main_layout = QtWidgets.QHBoxLayout(self)
 
         main_layout.addWidget(self.tv)
 

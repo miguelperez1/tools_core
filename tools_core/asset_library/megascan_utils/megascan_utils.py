@@ -362,4 +362,4 @@ def build_maya(asset):
 
 
 if __name__ == '__main__':
-    build_megascan_materials()
+    build_megascan_models()

@@ -1,3 +1,6 @@
+from tools_core.lightboard.constants import constants as lb_const
+
+
 class Node(object):
 
     def __init__(self, m_node, parent=None):
@@ -10,7 +13,6 @@ class Node(object):
             parent.add_child(self)
 
     def node_type(self):
-
         try:
             shape = self._m_node.getShape()
         except AttributeError:
@@ -26,9 +28,32 @@ class Node(object):
     def add_child(self, child):
         if child not in self._children:
             self._children.append(child)
+            child._parent = self
+
+    def insert_child(self, position, child):
+        if position < 0 or position < len(self._children):
+            return False
+
+        self._children.insert(position, child)
+        child._parent = self
+
+        return True
+
+    def remove_child(self, position):
+        if position < 0 or position < len(self._children):
+            return False
+
+        child = self._children.pop(position)
+        child._parent = None
+
+        return True
 
     def name(self):
         return self._name
+
+    def set_name(self, name):
+        self._name = name
+        self._m_node.rename(name)
 
     def child(self, row):
         return self._children[row]
@@ -54,6 +79,17 @@ class Node(object):
 class LightNode(Node):
     def __init__(self, m_node, parent=None):
         super(LightNode, self).__init__(m_node, parent)
+
+    def set_intensity(self, value):
+        if self.node_type() in lb_const.LIGHT_CLASS["arnold"]:
+            self.m_node.exposure.set(float(value))
+        elif self.node_type() == "directionalLight":
+            self.m_node.aiExposure.set(float(value))
+        else:
+            self._m_node.intensity.set(float(value))
+
+    def set_color(self, value):
+        self._m_node.color.set(value)
 
 
 class TransformNode(Node):
